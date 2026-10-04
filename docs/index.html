@@ -13,6 +13,7 @@
   --line: #E3E8ED; --rule: #B9C3CE; --head: #E6EBF0; --hover: #F5F7F9;
   --label: #0070C0; --record: #6A35D8; --record-soft: #EFE8FD;
   --grid: #BCC6D0; --sub: #7C8998; --grp: #2F3B4A; --mh: .85; --ml: .30; --mt: .11;
+  --g1: #DDF1E3; --g2: #FBE0E1; --g3: #DCEBFA; --g4: #FCEFD2;
   --b-tl: rgba(0,138,239,.40); --b-s: rgba(255,85,90,.42);
   --b-pl: rgba(99,195,132,.55); --b-t: rgba(255,182,40,.55);
   --scale: 99,190,123;
@@ -26,6 +27,7 @@
     --line: #232E3A; --rule: #3B4958; --head: #1C2631; --hover: #1A232D;
     --label: #2F8FD8; --record: #B49BFF; --record-soft: #2A2244;
     --grid: #34414F; --sub: #5F6F80; --grp: #A9B6C4; --mh: .62; --ml: .22; --mt: .13;
+    --g1: #1F3A2B; --g2: #44262A; --g3: #1D3349; --g4: #40351C;
     --b-tl: rgba(0,138,239,.50); --b-s: rgba(255,85,90,.48);
     --b-pl: rgba(99,195,132,.48); --b-t: rgba(255,182,40,.45);
     --scale: 78,170,110;
@@ -36,6 +38,7 @@
   --line: #232E3A; --rule: #3B4958; --head: #1C2631; --hover: #1A232D;
   --label: #2F8FD8; --record: #B49BFF; --record-soft: #2A2244;
   --grid: #34414F; --sub: #5F6F80; --grp: #A9B6C4; --mh: .62; --ml: .22; --mt: .13;
+  --g1: #1F3A2B; --g2: #44262A; --g3: #1D3349; --g4: #40351C;
   --b-tl: rgba(0,138,239,.50); --b-s: rgba(255,85,90,.48);
   --b-pl: rgba(99,195,132,.48); --b-t: rgba(255,182,40,.45);
   --scale: 78,170,110;
@@ -93,7 +96,7 @@ h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-size: 12.5px; padding: 0 20px 8px; }
 .legend i { display: inline-block; width: 22px; height: 10px; vertical-align: -1px; margin-right: 5px; border-radius: 1px; }
 .legend .rec { background: transparent; box-shadow: inset 0 0 0 2px var(--record); }
-.legend .pill { border-radius: 999px; background: linear-gradient(90deg, rgba(var(--rgb), var(--ml)), rgba(var(--rgb), var(--mh))); }
+.legend .pill { border-radius: 2px; background: linear-gradient(90deg, rgba(var(--rgb), var(--ml)), rgba(var(--rgb), var(--mh))); }
 
 /* Tabla */
 main { flex: 1 0 340px; min-height: 340px; display: flex; gap: 12px; padding: 0 20px 16px; }
@@ -110,6 +113,8 @@ th, td { height: 24px; padding: 0 7px; text-align: right; border-bottom: 1px sol
 thead { position: sticky; top: 0; z-index: 3; }
 thead th { background: var(--head); font-weight: 500; border-bottom-color: var(--rule); }
 thead .gname { text-align: left; font-weight: 600; font-size: 13.5px; height: 28px; }
+thead .gname.g1 { background-color: var(--g1); } thead .gname.g2 { background-color: var(--g2); }
+thead .gname.g3 { background-color: var(--g3); } thead .gname.g4 { background-color: var(--g4); }
 thead .sub { text-align: left; color: var(--muted); font-size: 12px; height: 20px; border-bottom-color: var(--line); }
 thead .tth { line-height: 1.15; vertical-align: bottom; padding-bottom: 5px; }
 .d { position: sticky; left: 0; z-index: 2; text-align: left; background: var(--panel); min-width: 82px; border-left: 0; border-right: 2px solid var(--sub); }
@@ -130,12 +135,12 @@ tbody tr:hover td { background-color: var(--hover); }
   background-image: linear-gradient(rgba(var(--scale), var(--a, 0)), rgba(var(--scale), var(--a, 0)));
   box-shadow: inset 0 0 0 2px var(--panel);
 }
-/* Posiciones: cápsula con degradado sobre un carril que marca hasta dónde llega el máximo. */
+/* Posiciones: barra con degradado sobre un carril que marca hasta dónde llega el máximo. */
 .m { position: relative; z-index: 0; }
-.m::before, .m::after { content: ""; position: absolute; z-index: -1; left: 4px; top: 4px; bottom: 4px; border-radius: 999px; }
+.m::before, .m::after { content: ""; position: absolute; z-index: -1; left: 4px; top: 4px; bottom: 4px; border-radius: 2px; }
 .m::before { right: 4px; background: rgba(var(--rgb), var(--mt)); }
 .m::after {
-  width: calc((100% - 8px) * var(--f, 0)); min-width: 8px;
+  width: calc((100% - 8px) * var(--f, 0)); min-width: 3px;
   background: linear-gradient(90deg, rgba(var(--rgb), var(--ml)), rgba(var(--rgb), var(--mh)));
 }
 .c-pl { --rgb: 38,166,91; } .c-ps { --rgb: 236,64,74; } .c-pt { --rgb: 240,160,10; }
@@ -257,6 +262,8 @@ aside .none { padding: 12px; color: var(--muted); }
   const styleFor = (meta, p) => (meta.pct ? '--a:' + (0.05 + 0.8 * p).toFixed(2)
     : meta.cls[0] === 'm' ? '--f:' + (0.04 + 0.96 * p).toFixed(3)
     : '--p:' + Math.round(3 + 97 * p) + '%');
+  // Color de la etiqueta de cada grupo; los grupos sin color propio lo toman por orden.
+  const GROUP_TINT = { asset_mgr: 'g1', dealer: 'g2', lev_money: 'g3' };
   const sepClass = (i) => (groupStart(i) ? ' gs' : subStart(i) ? ' ss' : '');
   const state = { index: null, report: null, asset: null, data: null, labels: {} };
 
@@ -335,7 +342,7 @@ aside .none { padding: 12px; color: var(--muted); }
   function renderTable() {
     const data = state.data, cols = data.columns, groups = state.report.groups;
     let h = '<thead><tr><th class="d" rowspan="3">Fecha</th><th class="tth" rowspan="3">Total<br>traders</th>';
-    groups.forEach((g) => { h += '<th class="gs gname" colspan="9">' + g.label + '</th>'; });
+    groups.forEach((g, i) => { h += '<th class="gs gname ' + (GROUP_TINT[g.key] || 'g' + (i % 4 + 1)) + '" colspan="9">' + g.label + '</th>'; });
     h += '</tr><tr>';
     groups.forEach(() => { h += '<th class="gs sub" colspan="4">Traders, % sobre el total</th><th class="sub ss" colspan="5">Contratos, % sobre open interest</th>'; });
     h += '</tr><tr>';
