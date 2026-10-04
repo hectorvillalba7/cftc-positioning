@@ -1,0 +1,72 @@
+# Configuración del panel de posicionamiento CFTC.
+# Para añadir un activo, copia una línea de `assets` y cambia nombre y código.
+# El código es el "CFTC Contract Market Code" que aparece en el reporte.
+
+settings:
+  # Hasta esta fecha el histórico solo sirve de referencia: se calcula el
+  # máximo pero no se anota ninguna superación.
+  warmup_until: "2010-01-01"
+  # Semanas mínimas de histórico antes de anotar superaciones (para activos
+  # que empezaron a reportarse más tarde).
+  warmup_min_weeks: 104
+  # Columnas que generan aviso al superar su máximo histórico:
+  #   tt = total de traders   tl / ts = traders long / short
+  #   pl / ps = posiciones long / short   pt = posiciones totales
+  event_fields: [tt, tl, ts, pl, ps]
+
+notify:
+  # true: correo cada semana aunque no haya máximos nuevos.
+  send_when_no_events: false
+  # Dirección de la web (GitHub Pages) para enlazarla en el correo.
+  site_url: ""
+
+reports:
+  tff:
+    enabled: true
+    variant: futures_only        # futures_only | combined (futuros + opciones)
+    groups: [asset_mgr, dealer, lev_money]
+    assets:
+      # invert: true cruza largos y cortos, para leer el futuro como par USD/xxx.
+      - {id: usdjpy,   name: USDJPY,    code: "097741", invert: true}
+      - {id: usdcad,   name: USDCAD,    code: "090741", invert: true}
+      - {id: usdchf,   name: USDCHF,    code: "092741", invert: true}
+      - {id: usdindex, name: USD INDEX, code: "098662"}
+      - {id: eurusd,   name: EURUSD,    code: "099741"}
+      - {id: gbpusd,   name: GBPUSD,    code: "096742"}
+      - {id: nzdusd,   name: NZDUSD,    code: "112741"}
+      - {id: audusd,   name: AUDUSD,    code: "232741"}
+      - {id: mxnusd,   name: MXNUSD,    code: "095741"}
+
+  # Mismas divisas que TFF, con los grupos Non Commercials y Commercials.
+  # El histórico empieza en 1986, así que la primera carga tarda algo más.
+  legacy:
+    enabled: true
+    variant: futures_only
+    groups: [noncomm, comm]
+    # warmup_until: "2010-01-01"   # opcional: fecha de referencia propia de este reporte
+    assets:
+      - {id: usdjpy,   name: USDJPY,    code: "097741", invert: true}
+      - {id: usdcad,   name: USDCAD,    code: "090741", invert: true}
+      - {id: usdchf,   name: USDCHF,    code: "092741", invert: true}
+      - {id: usdindex, name: USD INDEX, code: "098662"}
+      - {id: eurusd,   name: EURUSD,    code: "099741"}
+      - {id: gbpusd,   name: GBPUSD,    code: "096742"}
+      - {id: nzdusd,   name: NZDUSD,    code: "112741"}
+      - {id: audusd,   name: AUDUSD,    code: "232741"}
+      - {id: mxnusd,   name: MXNUSD,    code: "095741"}
+
+  # Commodities, con los grupos en el orden del Excel:
+  # Money Managers, PMPU (productores) y Swap Dealers.
+  disaggregated:
+    enabled: true
+    variant: futures_only
+    groups: [m_money, prod_merc, swap]
+    assets:
+      - {id: coffee,   name: Coffee,      code: "083731"}   # Coffee C, ICE
+      - {id: cocoa,    name: Cocoa,       code: "073732"}   # Cocoa, ICE
+      - {id: soyoil,   name: Soybean Oil, code: "007601"}   # CBOT
+      - {id: soybeans, name: Soybeans,    code: "005602"}   # CBOT
+      - {id: wheat,    name: Wheat,       code: "001602"}   # Chicago SRW, CBOT
+      - {id: corn,     name: Corn,        code: "002602"}   # CBOT
+      - {id: sugar,    name: Sugar,       code: "080732"}   # Sugar No. 11, ICE
+      - {id: cotton,   name: Cotton,      code: "033661"}   # Cotton No. 2, ICE
