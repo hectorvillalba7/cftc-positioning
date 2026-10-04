@@ -12,7 +12,7 @@ nueve columnas del Excel original:
 más `tt` (total de traders) al principio.
 """
 
-from .schemas import CODE_FIELD, DATE_FIELD, candidates
+from .schemas import CODE_FIELD, DATE_FIELD, find_field
 
 FIELDS = ["tl", "ts", "ptl", "pts", "pl", "ps", "pt", "pol", "pos"]
 
@@ -35,11 +35,10 @@ def resolve_fields(schema, groups, available):
     missing = []
 
     def pick(base):
-        for name in candidates(base):
-            if name in available:
-                return name
-        missing.append(base)
-        return None
+        name = find_field(base, available)
+        if name is None:
+            missing.append(base)
+        return name
 
     fmap = {"tt": pick(schema["total_traders"])}
     for g in groups:

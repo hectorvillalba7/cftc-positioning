@@ -38,8 +38,8 @@ REPORTS = {
         "datasets": {"futures_only": "6dca-aqww", "combined": "jun7-fc8e"},
         "total_traders": "traders_tot",
         "groups": {
-            "noncomm": _group("Non-Commercial", "traders_noncomm", "noncomm_positions", "pct_of_oi_noncomm"),
-            "comm": _group("Commercial", "traders_comm", "comm_positions", "pct_of_oi_comm"),
+            "noncomm": _group("Non Commercials", "traders_noncomm", "noncomm_positions", "pct_of_oi_noncomm"),
+            "comm": _group("Commercials", "traders_comm", "comm_positions", "pct_of_oi_comm"),
         },
     },
     "disaggregated": {
@@ -48,9 +48,9 @@ REPORTS = {
         "datasets": {"futures_only": "72hh-3qpy", "combined": "kh3c-gbw2"},
         "total_traders": "traders_tot",
         "groups": {
-            "prod_merc": _group("Producer/Merchant", "traders_prod_merc", "prod_merc_positions", "pct_of_oi_prod_merc"),
+            "prod_merc": _group("PMPU", "traders_prod_merc", "prod_merc_positions", "pct_of_oi_prod_merc"),
             "swap": _group("Swap Dealers", "traders_swap", "swap_positions", "pct_of_oi_swap"),
-            "m_money": _group("Managed Money", "traders_m_money", "m_money_positions", "pct_of_oi_m_money"),
+            "m_money": _group("Money Managers", "traders_m_money", "m_money_positions", "pct_of_oi_m_money"),
             "other_rept": _group("Other Reportables", "traders_other_rept", "other_rept_positions", "pct_of_oi_other_rept"),
         },
     },
@@ -65,3 +65,21 @@ ALIASES = {
 def candidates(base):
     """Posibles nombres en la API para una columna dada sin sufijo."""
     return ALIASES.get(base, []) + [base, base + "_all"]
+
+
+def find_field(base, available):
+    """Nombre real en la API de una columna lógica, o None si no existe.
+
+    Primero prueba los nombres esperados; si no están, busca una columna con
+    las mismas palabras (admite "_all" al final, guiones bajos dobles y la
+    errata "postions" que arrastra la CFTC).
+    """
+    for name in candidates(base):
+        if name in available:
+            return name
+    want = {t for t in base.split("_") if t}
+    for name in sorted(available):
+        tokens = {t for t in name.replace("postions", "positions").split("_") if t}
+        if want <= tokens and tokens - want <= {"all"}:
+            return name
+    return None

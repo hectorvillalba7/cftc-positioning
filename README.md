@@ -20,8 +20,8 @@ histórico, envía un correo a Gmail.
    - `GMAIL_APP_PASSWORD`: la contraseña de aplicación de 16 letras.
    - `MAIL_TO` (opcional): otra dirección de destino. Por defecto, la misma.
 4. **Primera carga**: pestaña Actions → "Actualizar datos CFTC" → Run
-   workflow. Descarga todo el histórico (desde 2006 en TFF) y tarda un par
-   de minutos. La primera carga no envía correo.
+   workflow. Descarga todo el histórico (desde 2006 en TFF y Disaggregated,
+   desde 1986 en Legacy) y tarda unos minutos. La primera carga no envía correo.
 5. **Prueba el correo**: Run workflow otra vez marcando "Enviar un correo de
    prueba".
 6. Pon la dirección de la web en `notify.site_url` de `config.yaml` para que
@@ -37,6 +37,8 @@ Tras la primera carga, en local:
     pip install -r requirements.txt openpyxl
     git pull
     python tools/compare_excel.py CFTC_DATA_Tiff.xlsx
+    python tools/compare_excel.py CFTC_DATA_Legacy.xlsx --report legacy
+    python tools/compare_excel.py CFTC_DATA_Disagreggated.xlsx --report disaggregated
 
 Compara celda a celda las semanas que tenías apuntadas. Si aparecen
 diferencias en todas las filas de posiciones, casi seguro que tu Excel usa
@@ -66,16 +68,16 @@ Todo está en `config.yaml`:
 - **Un activo nuevo**: añade una línea en `assets` con `id`, `name` y el
   código de contrato de la CFTC (`code`). Si un activo cambió de código a lo
   largo de su historia, `code` admite una lista.
-- **Legacy**: ya está preparado con los mismos activos que TFF. Pon
-  `enabled: true`.
-- **Disaggregated**: pon `enabled: true` y añade tus commodities en
-  `assets`.
+- **Un reporte**: se activa o desactiva con `enabled`. Los tres están
+  activos: TFF y Legacy con las divisas, Disaggregated con las commodities.
+- **Reglas propias por reporte**: dentro de un reporte se pueden poner
+  `warmup_until`, `warmup_min_weeks` o `event_fields` para que no use los
+  valores generales de `settings`.
 
-Legacy y Disaggregated aparecen en la web como un selector junto al título.
-Sus columnas están definidas en `cot/schemas.py`; la primera vez que los
-actives, revisa el registro de la ejecución: si la API usa otro nombre para
-alguna columna, sale un aviso "columnas no encontradas" con las que hay que
-corregir ahí.
+Los reportes aparecen en la web como un selector junto al título. Las
+columnas de cada uno están definidas en `cot/schemas.py`. Si la API usa otro
+nombre para alguna, el registro de la ejecución muestra un aviso "columnas
+no encontradas" con las que hay que corregir ahí.
 
 ## Estructura
 

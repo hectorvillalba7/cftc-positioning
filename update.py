@@ -34,7 +34,7 @@ def build_report(key, rc, settings, rows, out_dir):
     fmap, missing = compute.resolve_fields(schema, groups, available)
     if missing:
         print(f"[{key}] AVISO: columnas no encontradas en la API: {', '.join(missing)}")
-    if not fmap["tt"] or all(fmap[g]["pl"] is None for g in groups):
+    if all(fmap[g]["pl"] is None for g in groups):
         raise SystemExit(f"[{key}] La API no devuelve las columnas esperadas. Revisa cot/schemas.py.")
 
     entry = {
@@ -43,6 +43,7 @@ def build_report(key, rc, settings, rows, out_dir):
         "subtitle": schema["subtitle"],
         "variant": rc.get("variant", "futures_only"),
         "groups": [{"key": g, "label": schema["groups"][g]["label"]} for g in groups],
+        "warmup_until": str(settings["warmup_until"]),
         "assets": [],
     }
     payloads = {}
@@ -118,7 +119,9 @@ def main():
         else:
             codes = [str(c) for a in rc["assets"] for c in (a["code"] if isinstance(a["code"], list) else [a["code"]])]
             rows = fetch.fetch_rows(dataset, codes)
-        entry, payloads = build_report(key, rc, settings, rows, out_dir)
+        # Un reporte puede fijar sus propias reglas de aviso en config.yaml.
+        own = {k: rc[k] for k in ("warmup_until", "warmup_min_weeks", "event_fields") if k in rc}
+        entry, payloads = build_report(key, rc, {**settings, **own}, rows, out_dir)
         entry["config_hash"] = config_hash
         labels = {g["key"]: g["label"] for g in entry["groups"]}
         names = {a["id"]: a["name"] for a in entry["assets"]}

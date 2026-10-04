@@ -37,12 +37,13 @@ reports:
       - {id: audusd,   name: AUDUSD,    code: "232741"}
       - {id: mxnusd,   name: MXNUSD,    code: "095741"}
 
-  # Preparado para el futuro. Mismos activos que TFF; ponlo en `enabled: true`
-  # cuando quieras verlo en la web.
+  # Mismas divisas que TFF, con los grupos Non Commercials y Commercials.
+  # El histórico empieza en 1986, así que la primera carga tarda algo más.
   legacy:
-    enabled: false
+    enabled: true
     variant: futures_only
     groups: [noncomm, comm]
+    # warmup_until: "2010-01-01"   # opcional: fecha de referencia propia de este reporte
     assets:
       - {id: usdjpy,   name: USDJPY,    code: "097741", invert: true}
       - {id: usdcad,   name: USDCAD,    code: "090741", invert: true}
@@ -54,10 +55,18 @@ reports:
       - {id: audusd,   name: AUDUSD,    code: "232741"}
       - {id: mxnusd,   name: MXNUSD,    code: "095741"}
 
-  # Commodities. Añade aquí tus activos con su código de contrato.
+  # Commodities, con los grupos en el orden del Excel:
+  # Money Managers, PMPU (productores) y Swap Dealers.
   disaggregated:
-    enabled: false
+    enabled: true
     variant: futures_only
-    groups: [prod_merc, swap, m_money]
-    assets: []
-    #  - {id: oro, name: ORO, code: "088691"}
+    groups: [m_money, prod_merc, swap]
+    assets:
+      - {id: coffee,   name: Coffee,      code: "083731"}   # Coffee C, ICE
+      - {id: cocoa,    name: Cocoa,       code: "073732"}   # Cocoa, ICE
+      - {id: soyoil,   name: Soybean Oil, code: "007601"}   # CBOT
+      - {id: soybeans, name: Soybeans,    code: "005602"}   # CBOT
+      - {id: wheat,    name: Wheat,       code: "001602"}   # Chicago SRW, CBOT
+      - {id: corn,     name: Corn,        code: "002602"}   # CBOT
+      - {id: sugar,    name: Sugar,       code: "080732"}   # Sugar No. 11, ICE
+      - {id: cotton,   name: Cotton,      code: "033661"}   # Cotton No. 2, ICE

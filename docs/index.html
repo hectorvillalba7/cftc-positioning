@@ -403,7 +403,7 @@ aside .none { padding: 12px; color: var(--muted); }
       used.map((c) => '<option value="' + c + '">' + colLabel(c) + '</option>').join('');
     $('#ev-toggle').textContent = 'Máximos superados (' + data.events.length + ')';
     $('#ev-sub').textContent = 'Semanas en las que una columna de traders o de posiciones superó su máximo previo, desde ' +
-      fmtDate(state.index.warmup_until) + '.';
+      fmtDate(state.report.warmup_until || state.index.warmup_until) + '.';
     drawEvents();
   }
 
@@ -433,7 +433,7 @@ aside .none { padding: 12px; color: var(--muted); }
     cell.classList.remove('flash'); void cell.offsetWidth; cell.classList.add('flash');
   }
 
-  $('#reports').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) go(b.dataset.r); });
+  $('#reports').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) go(b.dataset.r, state.asset.id); });
   $('#assets').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) go(state.report.key, b.dataset.a); });
   $('#week').addEventListener('click', (e) => {
     const b = e.target.closest('.chip'); if (!b) return;
