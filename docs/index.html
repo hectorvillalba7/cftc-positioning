@@ -12,6 +12,7 @@
   --bg: #EEF1F4; --panel: #FFFFFF; --ink: #16202E; --muted: #5B6878;
   --line: #E3E8ED; --rule: #B9C3CE; --head: #E6EBF0; --hover: #F5F7F9;
   --label: #0070C0; --record: #6A35D8; --record-soft: #EFE8FD;
+  --grid: #BCC6D0; --sub: #7C8998; --grp: #2F3B4A; --mh: .85; --ml: .30; --mt: .11;
   --b-tl: rgba(0,138,239,.40); --b-s: rgba(255,85,90,.42);
   --b-pl: rgba(99,195,132,.55); --b-t: rgba(255,182,40,.55);
   --scale: 99,190,123;
@@ -24,6 +25,7 @@
     --bg: #0F151C; --panel: #151D26; --ink: #E4EAF0; --muted: #8E9BAA;
     --line: #232E3A; --rule: #3B4958; --head: #1C2631; --hover: #1A232D;
     --label: #2F8FD8; --record: #B49BFF; --record-soft: #2A2244;
+    --grid: #34414F; --sub: #5F6F80; --grp: #A9B6C4; --mh: .62; --ml: .22; --mt: .13;
     --b-tl: rgba(0,138,239,.50); --b-s: rgba(255,85,90,.48);
     --b-pl: rgba(99,195,132,.48); --b-t: rgba(255,182,40,.45);
     --scale: 78,170,110;
@@ -33,6 +35,7 @@
   --bg: #0F151C; --panel: #151D26; --ink: #E4EAF0; --muted: #8E9BAA;
   --line: #232E3A; --rule: #3B4958; --head: #1C2631; --hover: #1A232D;
   --label: #2F8FD8; --record: #B49BFF; --record-soft: #2A2244;
+  --grid: #34414F; --sub: #5F6F80; --grp: #A9B6C4; --mh: .62; --ml: .22; --mt: .13;
   --b-tl: rgba(0,138,239,.50); --b-s: rgba(255,85,90,.48);
   --b-pl: rgba(99,195,132,.48); --b-t: rgba(255,182,40,.45);
   --scale: 78,170,110;
@@ -90,6 +93,7 @@ h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-size: 12.5px; padding: 0 20px 8px; }
 .legend i { display: inline-block; width: 22px; height: 10px; vertical-align: -1px; margin-right: 5px; border-radius: 1px; }
 .legend .rec { background: transparent; box-shadow: inset 0 0 0 2px var(--record); }
+.legend .pill { border-radius: 999px; background: linear-gradient(90deg, rgba(var(--rgb), var(--ml)), rgba(var(--rgb), var(--mh))); }
 
 /* Tabla */
 main { flex: 1 0 340px; min-height: 340px; display: flex; gap: 12px; padding: 0 20px 16px; }
@@ -102,27 +106,40 @@ table {
   font: 13px/1 "IBM Plex Sans Condensed", "IBM Plex Sans", "Arial Narrow", system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
-th, td { height: 24px; padding: 0 6px; text-align: right; border-bottom: 1px solid var(--line); }
+th, td { height: 24px; padding: 0 7px; text-align: right; border-bottom: 1px solid var(--line); border-left: 1px solid var(--grid); }
 thead { position: sticky; top: 0; z-index: 3; }
 thead th { background: var(--head); font-weight: 500; border-bottom-color: var(--rule); }
 thead .gname { text-align: left; font-weight: 600; font-size: 13.5px; height: 28px; }
 thead .sub { text-align: left; color: var(--muted); font-size: 12px; height: 20px; border-bottom-color: var(--line); }
 thead .tth { line-height: 1.15; vertical-align: bottom; padding-bottom: 5px; }
-.d { position: sticky; left: 0; z-index: 2; text-align: left; background: var(--panel); min-width: 82px; border-right: 1px solid var(--rule); }
-thead .d { background: var(--head); z-index: 4; vertical-align: bottom; padding-bottom: 5px; }
-.gs { border-left: 2px solid var(--rule); }
-.mm th { background: var(--panel); font-weight: 600; }
-.mm .lab { background: var(--label); color: #fff; }
+.d { position: sticky; left: 0; z-index: 2; text-align: left; background: var(--panel); min-width: 82px; border-left: 0; border-right: 2px solid var(--sub); }
+thead .d { background: var(--head); z-index: 4; border-left: 0; vertical-align: bottom; padding-bottom: 5px; }
+.d + th, .d + td { border-left: 0; }
+.ss { border-left: 2px solid var(--sub); }
+.gs { border-left: 3px solid var(--grp); }
+.mm th { background-color: var(--panel); font-weight: 600; }
+.mm .lab { background-color: var(--label); color: #fff; }
 .mm:last-child th { border-bottom: 2px solid var(--rule); }
 tbody tr:hover td { background-color: var(--hover); }
-td.b {
+.b {
   background-image: linear-gradient(90deg, var(--bar) var(--p, 0%), transparent var(--p, 0%));
-  background-repeat: no-repeat; background-size: 100% 16px; background-position: 0 50%;
+  background-repeat: no-repeat; background-size: calc(100% - 6px) 16px; background-position: 3px 50%;
 }
-.c-tl { --bar: var(--b-tl); } .c-s { --bar: var(--b-s); } .c-pl { --bar: var(--b-pl); } .c-t { --bar: var(--b-t); }
-td.s { background-color: rgba(var(--scale), var(--a, 0)); }
-tbody tr:hover td.s { background-color: rgba(var(--scale), var(--a, 0)); }
-td.ev { box-shadow: inset 0 0 0 2px var(--record); font-weight: 600; }
+.c-tl { --bar: var(--b-tl); } .c-s { --bar: var(--b-s); } .c-t { --bar: var(--b-t); }
+.s {
+  background-image: linear-gradient(rgba(var(--scale), var(--a, 0)), rgba(var(--scale), var(--a, 0)));
+  box-shadow: inset 0 0 0 2px var(--panel);
+}
+/* Posiciones: cápsula con degradado sobre un carril que marca hasta dónde llega el máximo. */
+.m { position: relative; z-index: 0; }
+.m::before, .m::after { content: ""; position: absolute; z-index: -1; left: 4px; top: 4px; bottom: 4px; border-radius: 999px; }
+.m::before { right: 4px; background: rgba(var(--rgb), var(--mt)); }
+.m::after {
+  width: calc((100% - 8px) * var(--f, 0)); min-width: 8px;
+  background: linear-gradient(90deg, rgba(var(--rgb), var(--ml)), rgba(var(--rgb), var(--mh)));
+}
+.c-pl { --rgb: 38,166,91; } .c-ps { --rgb: 236,64,74; } .c-pt { --rgb: 240,160,10; }
+td.ev, td.s.ev { box-shadow: inset 0 0 0 2px var(--record); font-weight: 600; }
 tr.yr td { border-top: 2px solid var(--rule); }
 tr.gap td { height: 22px; text-align: left; color: var(--muted); font-style: italic; background: var(--bg); }
 tbody tr { scroll-margin-top: var(--thead-h, 150px); }
@@ -190,12 +207,13 @@ aside .none { padding: 12px; color: var(--muted); }
 </div>
 <div class="legend" aria-hidden="true">
   <span><i style="background:var(--b-tl)"></i>traders long</span>
-  <span><i style="background:var(--b-pl)"></i>posiciones long</span>
-  <span><i style="background:var(--b-s)"></i>short</span>
-  <span><i style="background:var(--b-t)"></i>totales</span>
-  <span><i style="background:rgba(var(--scale),.7)"></i>porcentajes</span>
+  <span><i style="background:var(--b-s)"></i>traders short</span>
+  <span><i class="pill c-pl"></i>posiciones long</span>
+  <span><i class="pill c-ps"></i>posiciones short</span>
+  <span><i style="background:var(--b-t)"></i><i class="pill c-pt"></i>totales</span>
+  <span><i style="background:rgba(var(--scale),.85)"></i>porcentajes</span>
   <span><i class="rec"></i>supera el máximo histórico previo</span>
-  <span>La barra y el color sitúan cada dato entre su mínimo y su máximo histórico.</span>
+  <span>Barra llena o verde más intenso = máximo histórico de la columna (fila Máx).</span>
 </div>
 <main>
   <div class="wrap" id="wrap" tabindex="0" aria-label="Tabla histórica"><table id="table"></table></div>
@@ -222,9 +240,9 @@ aside .none { padding: 12px; color: var(--muted); }
     ts:  { h: 'Short',      cls: 'b c-s',  name: 'traders short' },
     ptl: { h: '% Long',     cls: 's', pct: true },
     pts: { h: '% Short',    cls: 's', pct: true },
-    pl:  { h: 'Long',       cls: 'b c-pl', name: 'posiciones long' },
-    ps:  { h: 'Short',      cls: 'b c-s',  name: 'posiciones short' },
-    pt:  { h: 'Total',      cls: 'b c-t',  name: 'posiciones totales' },
+    pl:  { h: 'Long',       cls: 'm c-pl', name: 'posiciones long' },
+    ps:  { h: 'Short',      cls: 'm c-ps', name: 'posiciones short' },
+    pt:  { h: 'Total',      cls: 'm c-pt', name: 'posiciones totales' },
     pol: { h: '% Long',     cls: 's', pct: true },
     pos: { h: '% Short',    cls: 's', pct: true },
   };
@@ -234,6 +252,12 @@ aside .none { padding: 12px; color: var(--muted); }
   const fieldOf = (col) => col.split('.').pop();
   const fmt = (v, f) => (v == null ? '' : FIELD[f].pct ? nf1.format(v) : nf0.format(v));
   const groupStart = (i) => i >= 1 && (i - 1) % GROUP_FIELDS.length === 0;
+  const subStart = (i) => i >= 1 && (i - 1) % GROUP_FIELDS.length === 4;
+  // p = posición del dato entre el mínimo (0) y el máximo (1) histórico de su columna.
+  const styleFor = (meta, p) => (meta.pct ? '--a:' + (0.05 + 0.8 * p).toFixed(2)
+    : meta.cls[0] === 'm' ? '--f:' + (0.04 + 0.96 * p).toFixed(3)
+    : '--p:' + Math.round(3 + 97 * p) + '%');
+  const sepClass = (i) => (groupStart(i) ? ' gs' : subStart(i) ? ' ss' : '');
   const state = { index: null, report: null, asset: null, data: null, labels: {} };
 
   async function getJSON(path) {
@@ -313,16 +337,18 @@ aside .none { padding: 12px; color: var(--muted); }
     let h = '<thead><tr><th class="d" rowspan="3">Fecha</th><th class="tth" rowspan="3">Total<br>traders</th>';
     groups.forEach((g) => { h += '<th class="gs gname" colspan="9">' + g.label + '</th>'; });
     h += '</tr><tr>';
-    groups.forEach(() => { h += '<th class="gs sub" colspan="4">Traders, % sobre el total</th><th class="sub" colspan="5">Contratos, % sobre open interest</th>'; });
+    groups.forEach(() => { h += '<th class="gs sub" colspan="4">Traders, % sobre el total</th><th class="sub ss" colspan="5">Contratos, % sobre open interest</th>'; });
     h += '</tr><tr>';
-    groups.forEach(() => GROUP_FIELDS.forEach((f, i) => { h += '<th' + (i === 0 ? ' class="gs"' : '') + '>' + FIELD[f].h + '</th>'; }));
+    groups.forEach(() => GROUP_FIELDS.forEach((f, i) => { h += '<th class="' + (i === 0 ? 'gs' : i === 4 ? 'ss' : '') + '">' + FIELD[f].h + '</th>'; }));
     h += '</tr>';
     ['min', 'max'].forEach((k) => {
       h += '<tr class="mm"><th class="d lab">' + (k === 'min' ? 'Mín' : 'Máx') + '</th>';
       cols.forEach((c, i) => {
-        const s = data.stats[c];
-        h += '<th' + (groupStart(i) ? ' class="gs"' : '') + (s ? ' title="' + fmtDate(s[k + '_date']) + '"' : '') + '>' +
-          (s ? fmt(s[k], fieldOf(c)) : '') + '</th>';
+        const s = data.stats[c], meta = FIELD[fieldOf(c)];
+        if (!s) { h += '<th class="' + sepClass(i).trim() + '"></th>'; return; }
+        const p = k === 'max' || s.max === s.min ? 1 : 0;
+        h += '<th class="' + meta.cls + sepClass(i) + '" style="' + styleFor(meta, p) + '" title="' + fmtDate(s[k + '_date']) + '">' +
+          fmt(s[k], fieldOf(c)) + '</th>';
       });
       h += '</tr>';
     });
@@ -337,10 +363,10 @@ aside .none { padding: 12px; color: var(--muted); }
       h += '<tr id="r-' + d + '"' + (firstOfYear ? ' data-y="' + y + '"' + (ri ? ' class="yr"' : '') : '') + '><td class="d">' + fmtDate(d) + '</td>';
       const row = data.rows[ri];
       cols.forEach((c, i) => {
-        const v = row[i], f = fieldOf(c), meta = FIELD[f], s = data.stats[c], gs = groupStart(i) ? ' gs' : '';
-        if (v == null) { h += '<td class="' + gs + '"></td>'; return; }
+        const v = row[i], f = fieldOf(c), meta = FIELD[f], s = data.stats[c], gs = sepClass(i);
+        if (v == null) { h += '<td class="' + gs.trim() + '"></td>'; return; }
         const p = s && s.max > s.min ? (v - s.min) / (s.max - s.min) : 1;
-        const style = meta.pct ? '--a:' + (0.04 + 0.7 * p).toFixed(2) : '--p:' + Math.round(3 + 97 * p) + '%';
+        const style = styleFor(meta, p);
         const e = ev.get(d + '|' + c);
         h += '<td class="' + meta.cls + gs + (e ? ' ev' : '') + '" style="' + style + '"' +
           (e ? ' title="Supera el máximo histórico. Anterior: ' + fmt(e.p, f) + ' (' + fmtDate(e.pd) + ')"' : '') + '>' + fmt(v, f) + '</td>';
