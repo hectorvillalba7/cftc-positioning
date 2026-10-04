@@ -20,6 +20,33 @@ notify:
   # Dirección de la web (GitHub Pages) para enlazarla en el correo.
   site_url: ""
 
+# Vencimientos de contrato (último día de negociación), por id de activo.
+# Se marcan en la tabla en el primer reporte posterior al vencimiento.
+#   months: meses de contrato que se marcan (3 = marzo, etc.)
+#   rule:   third_wednesday  `offset` días hábiles antes del tercer miércoles
+#           day_15           día hábil anterior al día 15
+#           month_end        `offset` días hábiles antes del último día hábil del mes
+#           prior_month_end  último día hábil del mes anterior
+# Quita la línea de un activo para no marcar sus vencimientos.
+expiries:
+  usdjpy:   {rule: third_wednesday, offset: 2, months: [3, 6, 9, 12]}
+  usdcad:   {rule: third_wednesday, offset: 1, months: [3, 6, 9, 12]}
+  usdchf:   {rule: third_wednesday, offset: 2, months: [3, 6, 9, 12]}
+  usdindex: {rule: third_wednesday, offset: 2, months: [3, 6, 9, 12]}
+  eurusd:   {rule: third_wednesday, offset: 2, months: [3, 6, 9, 12]}
+  gbpusd:   {rule: third_wednesday, offset: 2, months: [3, 6, 9, 12]}
+  nzdusd:   {rule: third_wednesday, offset: 2, months: [3, 6, 9, 12]}
+  audusd:   {rule: third_wednesday, offset: 2, months: [3, 6, 9, 12]}
+  mxnusd:   {rule: third_wednesday, offset: 2, months: [3, 6, 9, 12]}
+  coffee:   {rule: month_end, offset: 8,  months: [3, 5, 7, 9, 12]}
+  cocoa:    {rule: month_end, offset: 11, months: [3, 5, 7, 9, 12]}
+  cotton:   {rule: month_end, offset: 16, months: [3, 5, 7, 10, 12]}
+  sugar:    {rule: prior_month_end,       months: [3, 5, 7, 10]}
+  soyoil:   {rule: day_15, months: [1, 3, 5, 7, 8, 9, 10, 12]}
+  soybeans: {rule: day_15, months: [1, 3, 5, 7, 8, 9, 11]}
+  wheat:    {rule: day_15, months: [3, 5, 7, 9, 12]}
+  corn:     {rule: day_15, months: [3, 5, 7, 9, 12]}
+
 reports:
   tff:
     enabled: true

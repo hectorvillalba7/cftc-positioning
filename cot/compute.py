@@ -12,6 +12,7 @@ nueve columnas del Excel original:
 más `tt` (total de traders) al principio.
 """
 
+from . import expiry
 from .schemas import CODE_FIELD, DATE_FIELD, find_field
 
 FIELDS = ["tl", "ts", "ptl", "pts", "pl", "ps", "pt", "pol", "pos"]
@@ -60,7 +61,7 @@ def _pct(part, total):
     return round(part * 100 / total, 2)
 
 
-def build_asset(rows, codes, fmap, groups, invert, settings):
+def build_asset(rows, codes, fmap, groups, invert, settings, expiry_rule=None):
     """Construye la tabla, los mín/máx y los eventos de un activo."""
     # Si un activo junta varios códigos de contrato, manda el primero de la lista.
     rows = sorted(rows, key=lambda r: codes.index(r[CODE_FIELD]))
@@ -125,10 +126,15 @@ def build_asset(rows, codes, fmap, groups, invert, settings):
             seen += 1
     events.sort(key=lambda e: (e["d"], -columns.index(e["c"])), reverse=True)
 
+    # Vencimientos de contrato, cada uno en el primer reporte posterior.
+    expiries, next_expiry = expiry.mark(expiry_rule, dates)
+
     return {
         "columns": columns,
         "dates": dates[::-1],  # la semana más reciente primero, como en el Excel
         "rows": table[::-1],
         "stats": stats,
         "events": events,
+        "expiries": expiries,
+        "next_expiry": next_expiry,
     }

@@ -58,6 +58,11 @@ el reporte de futuros + opciones: cambia `variant: combined` en
   semana. Se envía cuando aparece una fecha de datos posterior a la última
   avisada, sea viernes, lunes o varias semanas juntas. Si falta una semana,
   la tabla lo indica con una fila "Sin reporte".
+- **Vencimientos de contrato**: se calculan con la regla de cada mercado
+  (último día de negociación) y se marcan con una línea y el código del
+  contrato (por ejemplo `Z26`, diciembre de 2026) en el primer reporte
+  posterior. Las reglas y los meses de cada activo están en `expiries`, en
+  `config.yaml`; el cálculo está en `cot/expiry.py`.
 - Si Gmail falla, los datos se actualizan igualmente y el correo se
   reintenta en la siguiente ejecución.
 
@@ -86,6 +91,7 @@ no encontradas" con las que hay que corregir ahí.
     cot/schemas.py               columnas de cada tipo de reporte
     cot/fetch.py                 API pública de la CFTC
     cot/compute.py               inversión, mín/máx y máximos superados
+    cot/expiry.py                vencimientos de contrato
     cot/notify.py                correo
     docs/index.html              la web
     docs/data/                   datos generados (un JSON por activo)

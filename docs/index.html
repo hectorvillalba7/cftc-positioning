@@ -14,6 +14,7 @@
   --label: #0070C0; --record: #6A35D8; --record-soft: #EFE8FD;
   --grid: #BCC6D0; --sub: #7C8998; --grp: #2F3B4A; --mh: .85; --ml: .30; --mt: .11;
   --g1: #DDF1E3; --g2: #FBE0E1; --g3: #DCEBFA; --g4: #FCEFD2;
+  --exp: #B8156F; --exp-soft: #FBE1EF;
   --b-tl: rgba(0,138,239,.40); --b-s: rgba(255,85,90,.42);
   --b-pl: rgba(99,195,132,.55); --b-t: rgba(255,182,40,.55);
   --scale: 99,190,123;
@@ -28,6 +29,7 @@
     --label: #2F8FD8; --record: #B49BFF; --record-soft: #2A2244;
     --grid: #34414F; --sub: #5F6F80; --grp: #A9B6C4; --mh: .62; --ml: .22; --mt: .13;
     --g1: #1F3A2B; --g2: #44262A; --g3: #1D3349; --g4: #40351C;
+    --exp: #F47FBB; --exp-soft: #43203A;
     --b-tl: rgba(0,138,239,.50); --b-s: rgba(255,85,90,.48);
     --b-pl: rgba(99,195,132,.48); --b-t: rgba(255,182,40,.45);
     --scale: 78,170,110;
@@ -39,6 +41,7 @@
   --label: #2F8FD8; --record: #B49BFF; --record-soft: #2A2244;
   --grid: #34414F; --sub: #5F6F80; --grp: #A9B6C4; --mh: .62; --ml: .22; --mt: .13;
   --g1: #1F3A2B; --g2: #44262A; --g3: #1D3349; --g4: #40351C;
+  --exp: #F47FBB; --exp-soft: #43203A;
   --b-tl: rgba(0,138,239,.50); --b-s: rgba(255,85,90,.48);
   --b-pl: rgba(99,195,132,.48); --b-t: rgba(255,182,40,.45);
   --scale: 78,170,110;
@@ -146,6 +149,9 @@ tbody tr:hover td { background-color: var(--hover); }
 .c-pl { --rgb: 38,166,91; } .c-ps { --rgb: 236,64,74; } .c-pt { --rgb: 240,160,10; }
 td.ev, td.s.ev { box-shadow: inset 0 0 0 2px var(--record); font-weight: 600; }
 tr.yr td { border-top: 2px solid var(--rule); }
+tr.exp td { border-bottom: 2px solid var(--exp); }
+.xb { display: inline-block; margin-left: 6px; padding: 0 4px; border-radius: 3px; background: var(--exp-soft); color: var(--exp); font-weight: 600; font-size: 11.5px; line-height: 16px; cursor: help; }
+.legend .expl { height: 2px; vertical-align: 3px; background: var(--exp); }
 tr.gap td { height: 22px; text-align: left; color: var(--muted); font-style: italic; background: var(--bg); }
 tbody tr { scroll-margin-top: var(--thead-h, 150px); }
 td.flash { animation: flash 1.8s ease-out; }
@@ -204,6 +210,7 @@ aside .none { padding: 12px; color: var(--muted); }
 <div class="tools">
   <h2 id="asset-name"></h2>
   <span class="inv" id="inv"></span>
+  <span class="inv" id="next-exp"></span>
   <div class="right">
     <label for="year" class="inv">Ir a</label>
     <select id="year" aria-label="Ir a un año"></select>
@@ -218,6 +225,7 @@ aside .none { padding: 12px; color: var(--muted); }
   <span><i style="background:var(--b-t)"></i><i class="pill c-pt"></i>totales</span>
   <span><i style="background:rgba(var(--scale),.85)"></i>porcentajes</span>
   <span><i class="rec"></i>supera el máximo histórico previo</span>
+  <span><i class="expl"></i>vencimiento de contrato</span>
   <span>Barra llena o verde más intenso = máximo histórico de la columna (fila Máx).</span>
 </div>
 <main>
@@ -264,6 +272,11 @@ aside .none { padding: 12px; color: var(--muted); }
     : '--p:' + Math.round(3 + 97 * p) + '%');
   // Color de la etiqueta de cada grupo; los grupos sin color propio lo toman por orden.
   const GROUP_TINT = { asset_mgr: 'g1', dealer: 'g2', lev_money: 'g3' };
+  // Vencimientos: "Z26" = contrato de diciembre de 2026.
+  const MONTH_NAMES = { F: 'enero', G: 'febrero', H: 'marzo', J: 'abril', K: 'mayo', M: 'junio', N: 'julio', Q: 'agosto', U: 'septiembre', V: 'octubre', X: 'noviembre', Z: 'diciembre' };
+  const expiryText = (x) => 'contrato de ' + MONTH_NAMES[x.c[0]] + ' 20' + x.c.slice(1) + ', último día de negociación el ' +
+    DAYS[new Date(x.d + 'T00:00:00Z').getUTCDay()] + ' ' + fmtDate(x.d);
+  const expiryBadge = (x) => '<span class="xb" title="Vencimiento: ' + expiryText(x) + '.">' + x.c + '</span>';
   const sepClass = (i) => (groupStart(i) ? ' gs' : subStart(i) ? ' ss' : '');
   const state = { index: null, report: null, asset: null, data: null, labels: {} };
 
@@ -364,10 +377,14 @@ aside .none { padding: 12px; color: var(--muted); }
     const ev = new Map();
     data.events.forEach((e) => ev.set(e.d + '|' + e.c, e));
     const years = [];
+    const expiries = new Map();
+    (data.expiries || []).forEach((x) => { if (!expiries.has(x.r)) expiries.set(x.r, []); expiries.get(x.r).push(x); });
     data.dates.forEach((d, ri) => {
       const y = d.slice(0, 4), firstOfYear = years[years.length - 1] !== y;
       if (firstOfYear) years.push(y);
-      h += '<tr id="r-' + d + '"' + (firstOfYear ? ' data-y="' + y + '"' + (ri ? ' class="yr"' : '') : '') + '><td class="d">' + fmtDate(d) + '</td>';
+      const exp = expiries.get(d), rowCls = (firstOfYear && ri ? 'yr ' : '') + (exp ? 'exp' : '');
+      h += '<tr id="r-' + d + '"' + (firstOfYear ? ' data-y="' + y + '"' : '') + (rowCls ? ' class="' + rowCls.trim() + '"' : '') +
+        '><td class="d">' + fmtDate(d) + (exp ? exp.map(expiryBadge).join('') : '') + '</td>';
       const row = data.rows[ri];
       cols.forEach((c, i) => {
         const v = row[i], f = fieldOf(c), meta = FIELD[f], s = data.stats[c], gs = sepClass(i);
@@ -393,6 +410,8 @@ aside .none { padding: 12px; color: var(--muted); }
     const wrap = $('#wrap');
     wrap.scrollTop = 0;
     wrap.style.setProperty('--thead-h', $('#table thead').offsetHeight + 'px');
+    const nx = data.next_expiry;
+    $('#next-exp').textContent = nx ? 'Siguiente vencimiento: ' + nx.c + ', ' + DAYS[new Date(nx.d + 'T00:00:00Z').getUTCDay()] + ' ' + fmtDate(nx.d) + '.' : '';
     $('#year').innerHTML = years.map((y) => '<option>' + y + '</option>').join('');
   }
 

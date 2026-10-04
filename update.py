@@ -26,7 +26,7 @@ def dump(path, obj):
     path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
 
 
-def build_report(key, rc, settings, rows, out_dir):
+def build_report(key, rc, settings, rows, out_dir, expiries=None):
     """Calcula y escribe todos los activos de un reporte. Devuelve su ficha para index.json."""
     schema = schemas.REPORTS[key]
     groups = rc["groups"]
@@ -52,7 +52,8 @@ def build_report(key, rc, settings, rows, out_dir):
         asset_rows = [r for r in rows if r.get(schemas.CODE_FIELD) in codes]
         if not asset_rows:
             raise SystemExit(f"[{key}] Sin datos para {asset['name']} (código {', '.join(codes)}). ¿Es correcto el código?")
-        data = compute.build_asset(asset_rows, codes, fmap, groups, bool(asset.get("invert")), settings)
+        rule = asset.get("expiry") or (expiries or {}).get(asset["id"])
+        data = compute.build_asset(asset_rows, codes, fmap, groups, bool(asset.get("invert")), settings, rule)
         data.update({"report": key, "id": asset["id"], "name": asset["name"], "inverted": bool(asset.get("invert"))})
         dump(out_dir / key / f"{asset['id']}.json", data)
         payloads[asset["id"]] = data
@@ -95,7 +96,9 @@ def main():
             continue
         schema = schemas.REPORTS[key]
         dataset = rc.get("dataset") or schema["datasets"][rc.get("variant", "futures_only")]
-        config_hash = hashlib.sha1(json.dumps([rc, settings], sort_keys=True, default=str).encode()).hexdigest()[:12]
+        expiries = cfg.get("expiries") or {}
+        used = {a["id"]: expiries.get(a["id"]) for a in rc["assets"]}
+        config_hash = hashlib.sha1(json.dumps([rc, settings, used], sort_keys=True, default=str).encode()).hexdigest()[:12]
         old = prev_reports.get(key)
 
         # Comprobación barata: si la CFTC no ha publicado nada nuevo, no se descarga el histórico.
@@ -121,7 +124,7 @@ def main():
             rows = fetch.fetch_rows(dataset, codes)
         # Un reporte puede fijar sus propias reglas de aviso en config.yaml.
         own = {k: rc[k] for k in ("warmup_until", "warmup_min_weeks", "event_fields") if k in rc}
-        entry, payloads = build_report(key, rc, {**settings, **own}, rows, out_dir)
+        entry, payloads = build_report(key, rc, {**settings, **own}, rows, out_dir, expiries)
         entry["config_hash"] = config_hash
         labels = {g["key"]: g["label"] for g in entry["groups"]}
         names = {a["id"]: a["name"] for a in entry["assets"]}
