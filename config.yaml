@@ -1,0 +1,63 @@
+# Configuración del panel de posicionamiento CFTC.
+# Para añadir un activo, copia una línea de `assets` y cambia nombre y código.
+# El código es el "CFTC Contract Market Code" que aparece en el reporte.
+
+settings:
+  # Hasta esta fecha el histórico solo sirve de referencia: se calcula el
+  # máximo pero no se anota ninguna superación.
+  warmup_until: "2010-01-01"
+  # Semanas mínimas de histórico antes de anotar superaciones (para activos
+  # que empezaron a reportarse más tarde).
+  warmup_min_weeks: 104
+  # Columnas que generan aviso al superar su máximo histórico:
+  #   tt = total de traders   tl / ts = traders long / short
+  #   pl / ps = posiciones long / short   pt = posiciones totales
+  event_fields: [tt, tl, ts, pl, ps]
+
+notify:
+  # true: correo cada semana aunque no haya máximos nuevos.
+  send_when_no_events: false
+  # Dirección de la web (GitHub Pages) para enlazarla en el correo.
+  site_url: ""
+
+reports:
+  tff:
+    enabled: true
+    variant: futures_only        # futures_only | combined (futuros + opciones)
+    groups: [asset_mgr, dealer, lev_money]
+    assets:
+      # invert: true cruza largos y cortos, para leer el futuro como par USD/xxx.
+      - {id: usdjpy,   name: USDJPY,    code: "097741", invert: true}
+      - {id: usdcad,   name: USDCAD,    code: "090741", invert: true}
+      - {id: usdchf,   name: USDCHF,    code: "092741", invert: true}
+      - {id: usdindex, name: USD INDEX, code: "098662"}
+      - {id: eurusd,   name: EURUSD,    code: "099741"}
+      - {id: gbpusd,   name: GBPUSD,    code: "096742"}
+      - {id: nzdusd,   name: NZDUSD,    code: "112741"}
+      - {id: audusd,   name: AUDUSD,    code: "232741"}
+      - {id: mxnusd,   name: MXNUSD,    code: "095741"}
+
+  # Preparado para el futuro. Mismos activos que TFF; ponlo en `enabled: true`
+  # cuando quieras verlo en la web.
+  legacy:
+    enabled: false
+    variant: futures_only
+    groups: [noncomm, comm]
+    assets:
+      - {id: usdjpy,   name: USDJPY,    code: "097741", invert: true}
+      - {id: usdcad,   name: USDCAD,    code: "090741", invert: true}
+      - {id: usdchf,   name: USDCHF,    code: "092741", invert: true}
+      - {id: usdindex, name: USD INDEX, code: "098662"}
+      - {id: eurusd,   name: EURUSD,    code: "099741"}
+      - {id: gbpusd,   name: GBPUSD,    code: "096742"}
+      - {id: nzdusd,   name: NZDUSD,    code: "112741"}
+      - {id: audusd,   name: AUDUSD,    code: "232741"}
+      - {id: mxnusd,   name: MXNUSD,    code: "095741"}
+
+  # Commodities. Añade aquí tus activos con su código de contrato.
+  disaggregated:
+    enabled: false
+    variant: futures_only
+    groups: [prod_merc, swap, m_money]
+    assets: []
+    #  - {id: oro, name: ORO, code: "088691"}
