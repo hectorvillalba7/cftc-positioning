@@ -17,7 +17,7 @@
   --exp: #B8156F; --exp-soft: #FBE1EF;
   --b-tl: rgba(0,138,239,.40); --b-s: rgba(255,85,90,.42);
   --b-pl: rgba(99,195,132,.55); --b-t: rgba(255,182,40,.55);
-  --scale: 99,190,123;
+  --scale: 99,190,123; --scale-short: 240,84,90;
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -32,7 +32,7 @@
     --exp: #F47FBB; --exp-soft: #43203A;
     --b-tl: rgba(0,138,239,.50); --b-s: rgba(255,85,90,.48);
     --b-pl: rgba(99,195,132,.48); --b-t: rgba(255,182,40,.45);
-    --scale: 78,170,110;
+    --scale: 78,170,110; --scale-short: 214,72,80;
   }
 }
 :root[data-theme="dark"] {
@@ -44,7 +44,7 @@
   --exp: #F47FBB; --exp-soft: #43203A;
   --b-tl: rgba(0,138,239,.50); --b-s: rgba(255,85,90,.48);
   --b-pl: rgba(99,195,132,.48); --b-t: rgba(255,182,40,.45);
-  --scale: 78,170,110;
+  --scale: 78,170,110; --scale-short: 214,72,80;
 }
 *, *::before, *::after { box-sizing: inherit; }
 html, body { height: 100%; }
@@ -138,6 +138,8 @@ tbody tr:hover td { background-color: var(--hover); }
   background-image: linear-gradient(rgba(var(--scale), var(--a, 0)), rgba(var(--scale), var(--a, 0)));
   box-shadow: inset 0 0 0 2px var(--panel);
 }
+/* Los % short usan la misma escala, en rojo. */
+.s.sh { --scale: var(--scale-short); }
 /* Posiciones: barra con degradado sobre un carril que marca hasta dónde llega el máximo. */
 .m { position: relative; z-index: 0; }
 .m::before, .m::after { content: ""; position: absolute; z-index: -1; left: 4px; top: 4px; bottom: 4px; border-radius: 2px; }
@@ -223,10 +225,11 @@ aside .none { padding: 12px; color: var(--muted); }
   <span><i class="pill c-pl"></i>posiciones long</span>
   <span><i class="pill c-ps"></i>posiciones short</span>
   <span><i style="background:var(--b-t)"></i><i class="pill c-pt"></i>totales</span>
-  <span><i style="background:rgba(var(--scale),.85)"></i>porcentajes</span>
+  <span><i style="background:rgba(var(--scale),.85)"></i>% long</span>
+  <span><i style="background:rgba(var(--scale-short),.85)"></i>% short</span>
   <span><i class="rec"></i>supera el máximo histórico previo</span>
   <span><i class="expl"></i>vencimiento de contrato</span>
-  <span>Barra llena o verde más intenso = máximo histórico de la columna (fila Máx).</span>
+  <span>Barra llena o color más intenso = máximo histórico de la columna (fila Máx).</span>
 </div>
 <main>
   <div class="wrap" id="wrap" tabindex="0" aria-label="Tabla histórica"><table id="table"></table></div>
@@ -252,12 +255,12 @@ aside .none { padding: 12px; color: var(--muted); }
     tl:  { h: 'Long',       cls: 'b c-tl', name: 'traders long' },
     ts:  { h: 'Short',      cls: 'b c-s',  name: 'traders short' },
     ptl: { h: '% Long',     cls: 's', pct: true },
-    pts: { h: '% Short',    cls: 's', pct: true },
+    pts: { h: '% Short',    cls: 's sh', pct: true },
     pl:  { h: 'Long',       cls: 'm c-pl', name: 'posiciones long' },
     ps:  { h: 'Short',      cls: 'm c-ps', name: 'posiciones short' },
     pt:  { h: 'Total',      cls: 'm c-pt', name: 'posiciones totales' },
     pol: { h: '% Long',     cls: 's', pct: true },
-    pos: { h: '% Short',    cls: 's', pct: true },
+    pos: { h: '% Short',    cls: 's sh', pct: true },
   };
   const nf0 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 });
   const nf1 = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
