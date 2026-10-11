@@ -20,6 +20,7 @@ import bisect
 import datetime as dt
 
 MONTH_CODES = "FGHJKMNQUVXZ"  # enero ... diciembre
+MAX_GAP_DAYS = 21  # distancia máxima entre un vencimiento y el reporte donde se marca
 
 
 def _easter(year):
@@ -127,7 +128,11 @@ def mark(rule, dates):
             if day > last:
                 upcoming = upcoming if upcoming and upcoming["d"] <= day else item
                 continue
-            item["r"] = dates[bisect.bisect_left(dates, day)]
+            row = dates[bisect.bisect_left(dates, day)]
+            # Si el activo estuvo años sin reportarse, esos vencimientos no se marcan.
+            if (dt.date.fromisoformat(row) - dt.date.fromisoformat(day)).days > MAX_GAP_DAYS:
+                continue
+            item["r"] = row
             found.append(item)
     found.sort(key=lambda x: x["d"], reverse=True)
     return found, upcoming

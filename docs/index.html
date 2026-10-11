@@ -381,7 +381,12 @@ aside .none { padding: 12px; color: var(--muted); }
     data.events.forEach((e) => ev.set(e.d + '|' + e.c, e));
     const years = [];
     const expiries = new Map();
-    (data.expiries || []).forEach((x) => { if (!expiries.has(x.r)) expiries.set(x.r, []); expiries.get(x.r).push(x); });
+    // Si entre el vencimiento y el reporte hay un hueco largo sin datos, no se marca.
+    (data.expiries || []).forEach((x) => {
+      if ((Date.parse(x.r) - Date.parse(x.d)) / 864e5 > 21) return;
+      if (!expiries.has(x.r)) expiries.set(x.r, []);
+      expiries.get(x.r).push(x);
+    });
     data.dates.forEach((d, ri) => {
       const y = d.slice(0, 4), firstOfYear = years[years.length - 1] !== y;
       if (firstOfYear) years.push(y);
