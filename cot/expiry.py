@@ -10,7 +10,10 @@ Las fechas se calculan con la regla de cada mercado, sin descargar nada:
     month_end        N días hábiles antes del último día hábil del mes del
                      contrato (`offset`). Café: 8; cacao: 11; algodón: 16.
     prior_month_end  último día hábil del mes anterior al del contrato.
-                     Azúcar nº 11.
+                     Azúcar nº 11 y Heating Oil (NY Harbor ULSD).
+    before_month_start
+                     N días hábiles antes del primer día del mes del contrato
+                     (`offset`). Gas natural (Henry Hub, NYMEX): 3.
 
 El calendario de festivos es el general de los mercados de EE. UU. En algún
 festivo poco habitual la fecha real puede diferir en un día.
@@ -103,6 +106,8 @@ def expiry_date(rule, year, month):
         return back(dt.date(year, month, 15), 1)
     if kind == "month_end":
         return back(last_business_day(year, month), offset)
+    if kind == "before_month_start":
+        return back(dt.date(year, month, 1), offset)
     if kind == "prior_month_end":
         return back(dt.date(year, month, 1), 1)
     raise ValueError(f"Regla de vencimiento desconocida: {kind}")
