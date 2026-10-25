@@ -1,0 +1,68 @@
+{
+ "assets": [
+  {
+   "id": "eurusd",
+   "name": "EURUSD",
+   "future": "6E",
+   "first": null,
+   "last": null,
+   "sessions": 0
+  },
+  {
+   "id": "gbpusd",
+   "name": "GBPUSD",
+   "future": "6B",
+   "first": null,
+   "last": null,
+   "sessions": 0
+  },
+  {
+   "id": "usdjpy",
+   "name": "USDJPY",
+   "future": "6J",
+   "first": null,
+   "last": null,
+   "sessions": 0
+  },
+  {
+   "id": "audusd",
+   "name": "AUDUSD",
+   "future": "6A",
+   "first": null,
+   "last": null,
+   "sessions": 0
+  },
+  {
+   "id": "usdcad",
+   "name": "USDCAD",
+   "future": "6C",
+   "first": null,
+   "last": null,
+   "sessions": 0
+  },
+  {
+   "id": "usdchf",
+   "name": "USDCHF",
+   "future": "6S",
+   "first": null,
+   "last": null,
+   "sessions": 0
+  },
+  {
+   "id": "nzdusd",
+   "name": "NZDUSD",
+   "future": "6N",
+   "first": null,
+   "last": null,
+   "sessions": 0
+  },
+  {
+   "id": "mxnusd",
+   "name": "MXNUSD",
+   "future": "6M",
+   "first": null,
+   "last": null,
+   "sessions": 0
+  }
+ ]
+}
