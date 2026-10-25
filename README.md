@@ -84,6 +84,48 @@ columnas de cada uno están definidas en `cot/schemas.py`. Si la API usa otro
 nombre para alguna, el registro de la ejecución muestra un aviso "columnas
 no encontradas" con las que hay que corregir ahí.
 
+## Open interest del CME (opciones por strike y futuros)
+
+`cme_oi.py` guarda cada día, para las divisas de `cme_oi` en `config.yaml`:
+
+- el open interest, el volumen y la liquidación de **cada strike** de las
+  opciones (los 6 vencimientos mensuales más próximos y todas las semanales);
+- el volumen, el open interest y la liquidación de cada vencimiento del futuro.
+
+El CME solo deja consultar las últimas 5 sesiones, así que el histórico
+empieza el día que se activa esto. El workflow "Guardar open interest CME"
+se ejecuta de martes a sábado a las 06:20 y 16:20 UTC y recupera las sesiones
+que falten (hasta 5 atrás). Para la primera carga: Actions → "Guardar open
+interest CME" → Run workflow.
+
+Ficheros, en `data/cme/<activo>/`:
+
+    options/AAAA-MM-DD.csv.gz   trade_date, oi_date, series, series_label, contract,
+                                exp_month, strike, cp, settle, volume, oi
+    futures.csv                 trade_date, oi_date, contract, settle, change, volume, oi
+
+- `trade_date` es la sesión de la liquidación (precio y volumen). `oi_date` es
+  la sesión a la que corresponde el open interest: la anterior, porque el CME
+  publica el OI con un día de retraso ("Prior Day OI").
+- `series`: `EU2`/`EUR` mensuales; `MW1`, `AB1`, `WD1`, `BB1`, `E21` semanales
+  de lunes a viernes.
+- Los futuros cotizan como xxx/USD: en JPY, CAD y CHF, al revés que el par.
+
+Para leerlo en Python:
+
+    import pandas as pd
+    df = pd.read_csv("data/cme/eurusd/options/2026-10-23.csv.gz")
+
+**Si el CME bloquea a GitHub.** El CME rechaza a veces las peticiones que no
+vienen de un navegador. El script usa `curl_cffi` para imitar a Chrome, pero
+si el registro de la ejecución dice "BLOQUEADO por el CME", ejecútalo en tu
+ordenador cada día (por ejemplo con el Programador de tareas de Windows) y
+sube los datos:
+
+    pip install -r requirements.txt
+    python cme_oi.py
+    git add data/cme && git commit -m "Open interest CME" && git push
+
 ## Estructura
 
     config.yaml                  activos, reportes y reglas de aviso
@@ -93,7 +135,10 @@ no encontradas" con las que hay que corregir ahí.
     cot/compute.py               inversión, mín/máx y máximos superados
     cot/expiry.py                vencimientos de contrato
     cot/notify.py                correo
+    cot/cme.py                   servicios de liquidaciones del CME
+    cme_oi.py                    guarda el open interest del CME en data/cme
     docs/index.html              la web
     docs/data/                   datos generados (un JSON por activo)
     tools/compare_excel.py       comparación con el Excel manual
-    .github/workflows/update.yml automatización
+    .github/workflows/update.yml automatización del COT
+    .github/workflows/cme-oi.yml automatización del open interest del CME

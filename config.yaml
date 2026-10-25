@@ -27,6 +27,7 @@ notify:
 #           day_15           día hábil anterior al día 15
 #           month_end        `offset` días hábiles antes del último día hábil del mes
 #           prior_month_end  último día hábil del mes anterior
+#           before_month_start  `offset` días hábiles antes del primer día del mes
 # Quita la línea de un activo para no marcar sus vencimientos.
 expiries:
   usdjpy:   {rule: third_wednesday, offset: 2, months: [3, 6, 9, 12]}
@@ -46,6 +47,8 @@ expiries:
   soybeans: {rule: day_15, months: [1, 3, 5, 7, 8, 9, 11]}
   wheat:    {rule: day_15, months: [3, 5, 7, 9, 12]}
   corn:     {rule: day_15, months: [3, 5, 7, 9, 12]}
+  natgas:   {rule: before_month_start, offset: 3, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+  heatoil:  {rule: prior_month_end,               months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
 
 reports:
   tff:
@@ -97,3 +100,25 @@ reports:
       - {id: corn,     name: Corn,        code: "002602"}   # CBOT
       - {id: sugar,    name: Sugar,       code: "080732"}   # Sugar No. 11, ICE
       - {id: cotton,   name: Cotton,      code: "033661"}   # Cotton No. 2, ICE
+      - {id: natgas,   name: Natural Gas, code: "023651"}   # Henry Hub, NYMEX
+      - {id: heatoil,  name: Heating Oil, code: "022651"}   # NY Harbor ULSD, NYMEX
+
+# Open interest por strike de las opciones del CME (y volumen / OI de los
+# futuros). Se guarda cada día en data/cme/ con cme_oi.py. El CME solo
+# publica las últimas 5 sesiones: el histórico empieza el día que se activa.
+# El OI de cada fila es el del cierre de la sesión anterior (columna oi_date).
+cme_oi:
+  enabled: true
+  monthly_expirations: 6     # vencimientos mensuales que se guardan (los más próximos)
+  weeklies: true             # guardar también las semanales (lunes a viernes)
+  assets:
+    # future_id: identificador interno del CME (el de las páginas Settlements).
+    # Los futuros cotizan siempre como xxx/USD (en JPY, CAD y CHF, al revés que el par).
+    - {id: eurusd, name: EURUSD, globex: 6E, future_id: 58}
+    - {id: gbpusd, name: GBPUSD, globex: 6B, future_id: 42}
+    - {id: usdjpy, name: USDJPY, globex: 6J, future_id: 69}
+    - {id: audusd, name: AUDUSD, globex: 6A, future_id: 37}
+    - {id: usdcad, name: USDCAD, globex: 6C, future_id: 48}
+    - {id: usdchf, name: USDCHF, globex: 6S, future_id: 86}
+    - {id: nzdusd, name: NZDUSD, globex: 6N, future_id: 78}
+    - {id: mxnusd, name: MXNUSD, globex: 6M, future_id: 75}

@@ -1,0 +1,44 @@
+name: Guardar open interest CME
+
+on:
+  schedule:
+    # Las liquidaciones definitivas salen hacia las 23:55 de Chicago.
+    # Se guarda de martes a sábado por la mañana (UTC) y se reintenta por la tarde.
+    # Cada ejecución recupera las sesiones que falten (hasta 5 atrás).
+    - cron: "20 6 * * 2-6"
+    - cron: "20 16 * * 2-6"
+  workflow_dispatch:
+    inputs:
+      dates:
+        description: "Fechas a reescribir (AAAA-MM-DD, separadas por comas). Vacío = las que falten"
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-datos
+  cancel-in-progress: false
+
+jobs:
+  cme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Descargar open interest del CME
+        run: python cme_oi.py ${{ inputs.dates && format('--dates {0}', inputs.dates) || '' }}
+      - name: Guardar los datos en el repositorio
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/cme
+          git diff --cached --quiet && exit 0
+          git commit -m "Open interest CME actualizado"
+          git pull --rebase
+          git push
