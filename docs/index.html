@@ -229,6 +229,7 @@ aside .none { padding: 12px; color: var(--muted); }
   <span><i style="background:rgba(var(--scale-short),.85)"></i>% short</span>
   <span><i class="rec"></i>supera el máximo histórico previo</span>
   <span><i class="expl"></i>vencimiento de contrato</span>
+  <span id="leg-opt" hidden>Opciones (delta) = futuros + opciones menos solo futuros, en contratos equivalentes</span>
   <span>Barra llena o color más intenso = máximo histórico de la columna (fila Máx).</span>
 </div>
 <main>
@@ -249,7 +250,6 @@ aside .none { padding: 12px; color: var(--muted); }
   const $ = (s) => document.querySelector(s);
   const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-  const GROUP_FIELDS = ['tl', 'ts', 'ptl', 'pts', 'pl', 'ps', 'pt', 'pol', 'pos'];
   const FIELD = {
     tt:  { cls: 'b c-t',  name: 'Total de traders' },
     tl:  { h: 'Long',       cls: 'b c-tl', name: 'traders long' },
@@ -261,14 +261,44 @@ aside .none { padding: 12px; color: var(--muted); }
     pt:  { h: 'Total',      cls: 'm c-pt', name: 'posiciones totales' },
     pol: { h: '% Long',     cls: 's', pct: true },
     pos: { h: '% Short',    cls: 's sh', pct: true },
+    ol:  { h: 'Long',       cls: 'm c-pl', name: 'opciones lado largo',
+           tip: 'Calls compradas + puts vendidas, en contratos equivalentes (delta). Long combined − Long solo futuros, más el cambio de spreading en los grupos que lo tienen.' },
+    os:  { h: 'Short',      cls: 'm c-ps', name: 'opciones lado corto',
+           tip: 'Calls vendidas + puts compradas, en contratos equivalentes (delta). Short combined − Short solo futuros, más el cambio de spreading en los grupos que lo tienen.' },
+    xl:  { h: 'Long',       cls: 'm c-pl', name: 'long futuros + opciones',
+           tip: 'Posiciones long de solo futuros + opciones del lado largo.' },
+    xs:  { h: 'Short',      cls: 'm c-ps', name: 'short futuros + opciones',
+           tip: 'Posiciones short de solo futuros + opciones del lado corto.' },
   };
+  // Bloques de columnas dentro de cada grupo, con su rótulo en la cabecera.
+  const BLOCK = { tl: 'tr', ts: 'tr', ptl: 'tr', pts: 'tr', pl: 'po', ps: 'po', pt: 'po', pol: 'po', pos: 'po',
+    ol: 'op', os: 'op', xl: 'xp', xs: 'xp' };
+  const BLOCK_LABEL = { tr: 'Traders, % sobre el total', po: 'Contratos, % sobre open interest',
+    op: 'Opciones (delta)', xp: 'Futuros + opciones' };
   const nf0 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 });
   const nf1 = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const fmtDate = (iso) => { const p = iso.split('-'); return p[2] + '-' + MONTHS[+p[1] - 1] + '-' + p[0].slice(2); };
   const fieldOf = (col) => col.split('.').pop();
   const fmt = (v, f) => (v == null ? '' : FIELD[f].pct ? nf1.format(v) : nf0.format(v));
-  const groupStart = (i) => i >= 1 && (i - 1) % GROUP_FIELDS.length === 0;
-  const subStart = (i) => i >= 1 && (i - 1) % GROUP_FIELDS.length === 4;
+  // Para cada columna: grupo, campo, bloque y separador (gs = empieza grupo, ss = empieza bloque).
+  function layoutOf(cols) {
+    return cols.map((c, i) => {
+      const p = c.split('.'), g = p.length > 1 ? p[0] : null, f = p[p.length - 1];
+      const q = i ? cols[i - 1].split('.') : [], pg = q.length > 1 ? q[0] : null;
+      const sep = !g ? '' : g !== pg ? ' gs' : BLOCK[f] !== BLOCK[q[q.length - 1]] ? ' ss' : '';
+      return { g, f, b: BLOCK[f], sep };
+    });
+  }
+  // Tramos consecutivos de columnas con la misma clave (para los colspan de la cabecera).
+  function runs(layout, key) {
+    const out = [];
+    layout.forEach((x) => {
+      if (!x.g) return;
+      const k = key(x), last = out[out.length - 1];
+      if (last && last.k === k) last.n++; else out.push({ k, x, n: 1 });
+    });
+    return out;
+  }
   // p = posición del dato entre el mínimo (0) y el máximo (1) histórico de su columna.
   const styleFor = (meta, p) => (meta.pct ? '--a:' + (0.05 + 0.8 * p).toFixed(2)
     : meta.cls[0] === 'm' ? '--f:' + (0.04 + 0.96 * p).toFixed(3)
@@ -280,7 +310,6 @@ aside .none { padding: 12px; color: var(--muted); }
   const expiryText = (x) => 'contrato de ' + MONTH_NAMES[x.c[0]] + ' 20' + x.c.slice(1) + ', último día de negociación el ' +
     DAYS[new Date(x.d + 'T00:00:00Z').getUTCDay()] + ' ' + fmtDate(x.d);
   const expiryBadge = (x) => '<span class="xb" title="Vencimiento: ' + expiryText(x) + '.">' + x.c + '</span>';
-  const sepClass = (i) => (groupStart(i) ? ' gs' : subStart(i) ? ' ss' : '');
   const state = { index: null, report: null, asset: null, data: null, labels: {} };
 
   async function getJSON(path) {
@@ -339,7 +368,9 @@ aside .none { padding: 12px; color: var(--muted); }
       '<button data-r="' + r.key + '" aria-pressed="' + (r.key === rep.key) + '" title="' + r.subtitle + '">' + r.title + '</button>').join('');
     const day = DAYS[new Date(rep.latest + 'T00:00:00Z').getUTCDay()];
     $('#asof').textContent = 'Datos al ' + day + ' ' + fmtDate(rep.latest) +
-      (rep.variant === 'combined' ? ' (futuros y opciones)' : ' (solo futuros)');
+      (rep.variant === 'combined' ? ' (futuros y opciones)'
+        : (rep.options_groups || []).length ? ' (solo futuros, más columnas de opciones)' : ' (solo futuros)');
+    $('#leg-opt').hidden = !(rep.options_groups || []).length;
     $('#assets').innerHTML = rep.assets.map((a) => {
       const n = a.latest_events.length;
       return '<button role="tab" data-a="' + a.id + '" aria-selected="' + (a.id === asset.id) + '">' + a.name +
@@ -357,12 +388,18 @@ aside .none { padding: 12px; color: var(--muted); }
 
   function renderTable() {
     const data = state.data, cols = data.columns, groups = state.report.groups;
+    const L = layoutOf(cols), sepClass = (i) => L[i].sep;
+    const tint = (g) => GROUP_TINT[g] || 'g' + (groups.findIndex((x) => x.key === g) % 4 + 1);
     let h = '<thead><tr><th class="d" rowspan="3">Fecha</th><th class="tth" rowspan="3">Total<br>traders</th>';
-    groups.forEach((g, i) => { h += '<th class="gs gname ' + (GROUP_TINT[g.key] || 'g' + (i % 4 + 1)) + '" colspan="9">' + g.label + '</th>'; });
+    runs(L, (x) => x.g).forEach((r) => { h += '<th class="gs gname ' + tint(r.k) + '" colspan="' + r.n + '">' + state.labels[r.k] + '</th>'; });
     h += '</tr><tr>';
-    groups.forEach(() => { h += '<th class="gs sub" colspan="4">Traders, % sobre el total</th><th class="sub ss" colspan="5">Contratos, % sobre open interest</th>'; });
+    runs(L, (x) => x.g + '|' + x.b).forEach((r) => { h += '<th class="sub' + r.x.sep + '" colspan="' + r.n + '">' + BLOCK_LABEL[r.x.b] + '</th>'; });
     h += '</tr><tr>';
-    groups.forEach(() => GROUP_FIELDS.forEach((f, i) => { h += '<th class="' + (i === 0 ? 'gs' : i === 4 ? 'ss' : '') + '">' + FIELD[f].h + '</th>'; }));
+    L.forEach((x) => {
+      if (!x.g) return;
+      const tip = FIELD[x.f].tip;
+      h += '<th class="' + x.sep.trim() + '"' + (tip ? ' title="' + tip + '"' : '') + '>' + FIELD[x.f].h + '</th>';
+    });
     h += '</tr>';
     ['min', 'max'].forEach((k) => {
       h += '<tr class="mm"><th class="d lab">' + (k === 'min' ? 'Mín' : 'Máx') + '</th>';
@@ -429,7 +466,8 @@ aside .none { padding: 12px; color: var(--muted); }
     $('#ev-filter').innerHTML = '<option value="">Todas las columnas</option>' +
       used.map((c) => '<option value="' + c + '">' + colLabel(c) + '</option>').join('');
     $('#ev-toggle').textContent = 'Máximos superados (' + data.events.length + ')';
-    $('#ev-sub').textContent = 'Semanas en las que una columna de traders o de posiciones superó su máximo previo, desde ' +
+    $('#ev-sub').textContent = 'Semanas en las que una columna de traders, de posiciones' +
+      (cols.some((c) => BLOCK[fieldOf(c)] === 'op') ? ' o de opciones' : '') + ' superó su máximo previo, desde ' +
       fmtDate(state.report.warmup_until || state.index.warmup_until) + '.';
     drawEvents();
   }

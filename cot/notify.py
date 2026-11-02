@@ -13,6 +13,10 @@ FIELD_LABELS = {
     "pl": "posiciones long",
     "ps": "posiciones short",
     "pt": "posiciones totales",
+    "ol": "opciones lado largo",
+    "os": "opciones lado corto",
+    "xl": "long futuros + opciones",
+    "xs": "short futuros + opciones",
 }
 
 

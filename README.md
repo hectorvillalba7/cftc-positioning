@@ -66,6 +66,50 @@ el reporte de futuros + opciones: cambia `variant: combined` en
 - Si Gmail falla, los datos se actualizan igualmente y el correo se
   reintenta en la siguiente ejecución.
 
+## Columnas de opciones (Disaggregated)
+
+En Money Managers y PMPU la tabla añade dos bloques que salen de restar el
+reporte de **solo futuros** al de **futuros + opciones** (combined). En el
+combined la CFTC suma a cada trader sus opciones convertidas a futuros con
+la delta: calls compradas y puts vendidas al lado largo, calls vendidas y
+puts compradas al lado corto.
+
+- **Opciones (delta), Long / Short**: lo que cada grupo tiene en opciones en
+  cada lado, en contratos equivalentes.
+- **Futuros + opciones, Long / Short**: la columna de solo futuros más su
+  lado de opciones.
+
+Fórmulas:
+
+    PMPU (no tiene spreading)
+      opciones long  = Long combined  - Long solo futuros
+      opciones short = Short combined - Short solo futuros
+      (futuros + opciones = Long / Short del combined, tal cual)
+
+    Money Managers (hay que corregir el spreading)
+      opciones long  = (Long combined  - Long futuros)  + (Spread combined - Spread futuros)
+      opciones short = (Short combined - Short futuros) + (Spread combined - Spread futuros)
+
+La corrección del spreading hace falta porque, al meter las opciones, la
+CFTC recalcula el spreading de cada trader y mueve contratos entre Long,
+Short y Spread sin que nadie haya operado. Por eso aquí solo se usan
+posiciones: los % de open interest y el número de traders del combined no
+se pueden restar igual.
+
+Las columnas `ol`, `os`, `xl` y `xs` marcan máximos superados como el resto
+(`event_fields` del reporte). Dos cosas a tener en cuenta al leerlas:
+
+- **La delta se mueve con el precio** aunque nadie opere: en un rally las
+  calls ganan delta y crecen solos el lado largo de quien las compró y el
+  corto de quien las vendió. Un máximo nuevo que solo aparece en opciones en
+  una semana de movimiento fuerte puede ser solo efecto del precio.
+- **Semanas de vencimiento**: las opciones que vencen salen del reporte de
+  golpe y los lados de opciones dan saltos sin decisión detrás.
+
+Se activa por reporte con `options_groups` en `config.yaml` (solo con
+`variant: futures_only`). Si la API no devuelve alguna columna necesaria,
+el registro de la ejecución lo avisa y esas columnas quedan vacías.
+
 ## Añadir activos o reportes
 
 Todo está en `config.yaml`:
@@ -78,53 +122,13 @@ Todo está en `config.yaml`:
 - **Reglas propias por reporte**: dentro de un reporte se pueden poner
   `warmup_until`, `warmup_min_weeks` o `event_fields` para que no use los
   valores generales de `settings`.
+- **Columnas de opciones**: `options_groups` con los grupos que las llevan
+  (ver la sección anterior).
 
 Los reportes aparecen en la web como un selector junto al título. Las
 columnas de cada uno están definidas en `cot/schemas.py`. Si la API usa otro
 nombre para alguna, el registro de la ejecución muestra un aviso "columnas
 no encontradas" con las que hay que corregir ahí.
-
-## Open interest del CME (opciones por strike y futuros)
-
-`cme_oi.py` guarda cada día, para las divisas de `cme_oi` en `config.yaml`:
-
-- el open interest, el volumen y la liquidación de **cada strike** de las
-  opciones (los 6 vencimientos mensuales más próximos y todas las semanales);
-- el volumen, el open interest y la liquidación de cada vencimiento del futuro.
-
-El CME solo deja consultar las últimas 5 sesiones, así que el histórico
-empieza el día que se activa esto. El workflow "Guardar open interest CME"
-se ejecuta de martes a sábado a las 06:20 y 16:20 UTC y recupera las sesiones
-que falten (hasta 5 atrás). Para la primera carga: Actions → "Guardar open
-interest CME" → Run workflow.
-
-Ficheros, en `data/cme/<activo>/`:
-
-    options/AAAA-MM-DD.csv.gz   trade_date, oi_date, series, series_label, contract,
-                                exp_month, strike, cp, settle, volume, oi
-    futures.csv                 trade_date, oi_date, contract, settle, change, volume, oi
-
-- `trade_date` es la sesión de la liquidación (precio y volumen). `oi_date` es
-  la sesión a la que corresponde el open interest: la anterior, porque el CME
-  publica el OI con un día de retraso ("Prior Day OI").
-- `series`: `EU2`/`EUR` mensuales; `MW1`, `AB1`, `WD1`, `BB1`, `E21` semanales
-  de lunes a viernes.
-- Los futuros cotizan como xxx/USD: en JPY, CAD y CHF, al revés que el par.
-
-Para leerlo en Python:
-
-    import pandas as pd
-    df = pd.read_csv("data/cme/eurusd/options/2026-10-23.csv.gz")
-
-**Si el CME bloquea a GitHub.** El CME rechaza a veces las peticiones que no
-vienen de un navegador. El script usa `curl_cffi` para imitar a Chrome, pero
-si el registro de la ejecución dice "BLOQUEADO por el CME", ejecútalo en tu
-ordenador cada día (por ejemplo con el Programador de tareas de Windows) y
-sube los datos:
-
-    pip install -r requirements.txt
-    python cme_oi.py
-    git add data/cme && git commit -m "Open interest CME" && git push
 
 ## Estructura
 
@@ -135,10 +139,7 @@ sube los datos:
     cot/compute.py               inversión, mín/máx y máximos superados
     cot/expiry.py                vencimientos de contrato
     cot/notify.py                correo
-    cot/cme.py                   servicios de liquidaciones del CME
-    cme_oi.py                    guarda el open interest del CME en data/cme
     docs/index.html              la web
     docs/data/                   datos generados (un JSON por activo)
     tools/compare_excel.py       comparación con el Excel manual
-    .github/workflows/update.yml automatización del COT
-    .github/workflows/cme-oi.yml automatización del open interest del CME
+    .github/workflows/update.yml automatización

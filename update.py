@@ -26,7 +26,16 @@ def dump(path, obj):
     path.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
 
 
-def build_report(key, rc, settings, rows, out_dir, expiries=None):
+def option_groups(key, rc):
+    """Grupos con columnas de opciones (combined - solo futuros) en este reporte."""
+    wanted = [g for g in (rc.get("options_groups") or []) if g in rc["groups"]]
+    if wanted and rc.get("variant", "futures_only") != "futures_only":
+        print(f"[{key}] AVISO: options_groups solo tiene sentido con variant: futures_only; se ignora")
+        return []
+    return wanted
+
+
+def build_report(key, rc, settings, rows, out_dir, expiries=None, comb_rows=None):
     """Calcula y escribe todos los activos de un reporte. Devuelve su ficha para index.json."""
     schema = schemas.REPORTS[key]
     groups = rc["groups"]
@@ -37,12 +46,22 @@ def build_report(key, rc, settings, rows, out_dir, expiries=None):
     if all(fmap[g]["pl"] is None for g in groups):
         raise SystemExit(f"[{key}] La API no devuelve las columnas esperadas. Revisa cot/schemas.py.")
 
+    opt_groups = option_groups(key, rc)
+    opt_map = {}
+    if opt_groups:
+        comb_rows = comb_rows or []
+        available_comb = set().union(*(r.keys() for r in comb_rows)) if comb_rows else set()
+        opt_map, missing = compute.resolve_option_fields(schema, opt_groups, available, available_comb)
+        if missing:
+            print(f"[{key}] AVISO: columnas de opciones no encontradas (esos grupos salen vacíos): {', '.join(missing)}")
+
     entry = {
         "key": key,
         "title": schema["title"],
         "subtitle": schema["subtitle"],
         "variant": rc.get("variant", "futures_only"),
         "groups": [{"key": g, "label": schema["groups"][g]["label"]} for g in groups],
+        "options_groups": opt_groups,
         "warmup_until": str(settings["warmup_until"]),
         "assets": [],
     }
@@ -53,7 +72,13 @@ def build_report(key, rc, settings, rows, out_dir, expiries=None):
         if not asset_rows:
             raise SystemExit(f"[{key}] Sin datos para {asset['name']} (código {', '.join(codes)}). ¿Es correcto el código?")
         rule = asset.get("expiry") or (expiries or {}).get(asset["id"])
-        data = compute.build_asset(asset_rows, codes, fmap, groups, bool(asset.get("invert")), settings, rule)
+        options = None
+        if opt_groups:
+            asset_comb = [r for r in comb_rows if r.get(schemas.CODE_FIELD) in codes]
+            if not asset_comb:
+                print(f"[{key}] AVISO: {asset['name']} no tiene datos de futuros + opciones; columnas de opciones vacías")
+            options = {"rows": asset_comb, "fmap": opt_map}
+        data = compute.build_asset(asset_rows, codes, fmap, groups, bool(asset.get("invert")), settings, rule, options)
         data.update({"report": key, "id": asset["id"], "name": asset["name"], "inverted": bool(asset.get("invert"))})
         dump(out_dir / key / f"{asset['id']}.json", data)
         payloads[asset["id"]] = data
@@ -117,14 +142,21 @@ def main():
                                 dry_run_path=args.dry_run_email)
                 continue
 
+        # Con columnas de opciones se descarga también el reporte combined.
+        wants_options, comb_rows = bool(option_groups(key, rc)), None
         if args.fixtures:
             rows = json.loads((Path(args.fixtures) / f"{key}.json").read_text(encoding="utf-8"))
+            comb_path = Path(args.fixtures) / f"{key}_combined.json"
+            if wants_options and comb_path.exists():
+                comb_rows = json.loads(comb_path.read_text(encoding="utf-8"))
         else:
             codes = [str(c) for a in rc["assets"] for c in (a["code"] if isinstance(a["code"], list) else [a["code"]])]
             rows = fetch.fetch_rows(dataset, codes)
+            if wants_options:
+                comb_rows = fetch.fetch_rows(schema["datasets"]["combined"], codes)
         # Un reporte puede fijar sus propias reglas de aviso en config.yaml.
         own = {k: rc[k] for k in ("warmup_until", "warmup_min_weeks", "event_fields") if k in rc}
-        entry, payloads = build_report(key, rc, {**settings, **own}, rows, out_dir, expiries)
+        entry, payloads = build_report(key, rc, {**settings, **own}, rows, out_dir, expiries, comb_rows)
         entry["config_hash"] = config_hash
         labels = {g["key"]: g["label"] for g in entry["groups"]}
         names = {a["id"]: a["name"] for a in entry["assets"]}

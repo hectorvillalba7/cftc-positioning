@@ -91,6 +91,13 @@ reports:
     enabled: true
     variant: futures_only
     groups: [m_money, prod_merc, swap]
+    # Columnas de opciones (futuros + opciones menos solo futuros) en estos
+    # grupos: lado largo y corto de opciones, en delta, y long / short de
+    # futuros + opciones. Quita la línea para no calcularlas.
+    options_groups: [m_money, prod_merc]
+    # Columnas que marcan máximo superado en este reporte:
+    #   ol / os = opciones lado largo / corto   xl / xs = futuros + opciones long / short
+    event_fields: [tt, tl, ts, pl, ps, ol, os, xl, xs]
     assets:
       - {id: coffee,   name: Coffee,      code: "083731"}   # Coffee C, ICE
       - {id: cocoa,    name: Cocoa,       code: "073732"}   # Cocoa, ICE
@@ -102,23 +109,3 @@ reports:
       - {id: cotton,   name: Cotton,      code: "033661"}   # Cotton No. 2, ICE
       - {id: natgas,   name: Natural Gas, code: "023651"}   # Henry Hub, NYMEX
       - {id: heatoil,  name: Heating Oil, code: "022651"}   # NY Harbor ULSD, NYMEX
-
-# Open interest por strike de las opciones del CME (y volumen / OI de los
-# futuros). Se guarda cada día en data/cme/ con cme_oi.py. El CME solo
-# publica las últimas 5 sesiones: el histórico empieza el día que se activa.
-# El OI de cada fila es el del cierre de la sesión anterior (columna oi_date).
-cme_oi:
-  enabled: true
-  monthly_expirations: 6     # vencimientos mensuales que se guardan (los más próximos)
-  weeklies: true             # guardar también las semanales (lunes a viernes)
-  assets:
-    # future_id: identificador interno del CME (el de las páginas Settlements).
-    # Los futuros cotizan siempre como xxx/USD (en JPY, CAD y CHF, al revés que el par).
-    - {id: eurusd, name: EURUSD, globex: 6E, future_id: 58}
-    - {id: gbpusd, name: GBPUSD, globex: 6B, future_id: 42}
-    - {id: usdjpy, name: USDJPY, globex: 6J, future_id: 69}
-    - {id: audusd, name: AUDUSD, globex: 6A, future_id: 37}
-    - {id: usdcad, name: USDCAD, globex: 6C, future_id: 48}
-    - {id: usdchf, name: USDCHF, globex: 6S, future_id: 86}
-    - {id: nzdusd, name: NZDUSD, globex: 6N, future_id: 78}
-    - {id: mxnusd, name: MXNUSD, globex: 6M, future_id: 75}
