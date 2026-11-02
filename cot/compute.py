@@ -32,6 +32,7 @@ from .schemas import CODE_FIELD, DATE_FIELD, find_field
 
 FIELDS = ["tl", "ts", "ptl", "pts", "pl", "ps", "pt", "pol", "pos"]
 OPT_FIELDS = ["ol", "os", "xl", "xs"]
+DEFAULT_OPT_FIELDS = ["ol", "os"]  # los que se muestran si config.yaml no dice otra cosa
 
 
 def num(value):
@@ -131,14 +132,17 @@ def build_asset(rows, codes, fmap, groups, invert, settings, expiry_rule=None, o
     """Construye la tabla, los mín/máx y los eventos de un activo.
 
     `options`, si se pasa, es {"rows": filas del combined, "fmap": mapa de
-    resolve_option_fields}; añade las columnas de opciones a esos grupos.
+    resolve_option_fields, "fields": columnas de opciones a mostrar}; añade
+    esas columnas a los grupos del mapa.
     """
     by_date = _by_date(rows, codes)
     dates = sorted(by_date)
     opt_map = (options or {}).get("fmap") or {}
     comb_by_date = _by_date((options or {}).get("rows") or [], codes)
+    wanted = (options or {}).get("fields") or DEFAULT_OPT_FIELDS
+    opt_fields = [f for f in OPT_FIELDS if f in wanted]
 
-    columns = ["tt"] + [f"{g}.{f}" for g in groups for f in FIELDS + (OPT_FIELDS if g in opt_map else [])]
+    columns = ["tt"] + [f"{g}.{f}" for g in groups for f in FIELDS + (opt_fields if g in opt_map else [])]
     table = []
     for d in dates:
         r = by_date[d]
@@ -158,7 +162,8 @@ def build_asset(rows, codes, fmap, groups, invert, settings, expiry_rule=None, o
                 ol, os_, xl, xs = option_sides(r, comb_by_date.get(d), opt_map[g])
                 if invert:
                     ol, os_, xl, xs = os_, ol, xs, xl
-                line += [ol, os_, xl, xs]
+                values = {"ol": ol, "os": os_, "xl": xl, "xs": xs}
+                line += [values[f] for f in opt_fields]
         table.append(line)
 
     # Mínimos y máximos de todo el histórico, columna a columna.

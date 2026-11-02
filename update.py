@@ -77,7 +77,7 @@ def build_report(key, rc, settings, rows, out_dir, expiries=None, comb_rows=None
             asset_comb = [r for r in comb_rows if r.get(schemas.CODE_FIELD) in codes]
             if not asset_comb:
                 print(f"[{key}] AVISO: {asset['name']} no tiene datos de futuros + opciones; columnas de opciones vacías")
-            options = {"rows": asset_comb, "fmap": opt_map}
+            options = {"rows": asset_comb, "fmap": opt_map, "fields": rc.get("options_fields")}
         data = compute.build_asset(asset_rows, codes, fmap, groups, bool(asset.get("invert")), settings, rule, options)
         data.update({"report": key, "id": asset["id"], "name": asset["name"], "inverted": bool(asset.get("invert"))})
         dump(out_dir / key / f"{asset['id']}.json", data)
