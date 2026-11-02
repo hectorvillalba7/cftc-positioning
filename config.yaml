@@ -91,6 +91,13 @@ reports:
     enabled: true
     variant: futures_only
     groups: [m_money, prod_merc, swap]
+    # Columnas de opciones (futuros + opciones menos solo futuros) en estos
+    # grupos: lado largo y corto de opciones, en delta, y long / short de
+    # futuros + opciones. Quita la línea para no calcularlas.
+    options_groups: [m_money, prod_merc]
+    # Columnas que marcan máximo superado en este reporte:
+    #   ol / os = opciones lado largo / corto   xl / xs = futuros + opciones long / short
+    event_fields: [tt, tl, ts, pl, ps, ol, os, xl, xs]
     assets:
       - {id: coffee,   name: Coffee,      code: "083731"}   # Coffee C, ICE
       - {id: cocoa,    name: Cocoa,       code: "073732"}   # Cocoa, ICE

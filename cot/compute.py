@@ -10,12 +10,28 @@ nueve columnas del Excel original:
     pol, pos  % sobre open interest long / short
 
 más `tt` (total de traders) al principio.
+
+En los grupos que tienen activadas las columnas de opciones (`options_groups`
+en config.yaml) se añaden cuatro más, que salen de restar el reporte de
+solo futuros al de futuros + opciones (combined):
+
+    ol, os    opciones del lado largo / corto, en futuros-equivalentes (delta)
+    xl, xs    futuros + opciones: long / short de futuros más su lado de opciones
+
+    lado largo = (Long combined - Long futuros) [+ (Spread combined - Spread futuros)]
+    lado corto = (Short combined - Short futuros) [+ (Spread combined - Spread futuros)]
+
+El término del spreading solo se suma en los grupos que lo tienen (Money
+Managers sí, PMPU no): al meter las opciones, la CFTC pasa a spreading la
+parte en la que cada trader queda igualado entre largo y corto, y sin esa
+corrección el lado de opciones saldría falseado.
 """
 
 from . import expiry
 from .schemas import CODE_FIELD, DATE_FIELD, find_field
 
 FIELDS = ["tl", "ts", "ptl", "pts", "pl", "ps", "pt", "pol", "pos"]
+OPT_FIELDS = ["ol", "os", "xl", "xs"]
 
 
 def num(value):
@@ -55,22 +71,74 @@ def resolve_fields(schema, groups, available):
     return fmap, missing
 
 
+def resolve_option_fields(schema, groups, available_fut, available_comb):
+    """Columnas necesarias para el lado de opciones de cada grupo.
+
+    Devuelve (mapa, lista de columnas no encontradas). Un grupo al que le
+    falte alguna columna queda con mapa None y sus columnas de opciones
+    salen vacías (mejor vacías que mal calculadas).
+    """
+    missing, out = [], {}
+    for g in groups:
+        spec = schema["groups"][g]
+        bases = {"pl": spec["positions"] + "_long", "ps": spec["positions"] + "_short"}
+        if spec.get("spread"):
+            bases["sp"] = spec["positions"] + "_spread"
+        m, ok = {}, True
+        for side, available, tag in (("fut", available_fut, "solo futuros"), ("comb", available_comb, "combined")):
+            m[side] = {}
+            for k, base in bases.items():
+                name = find_field(base, available)
+                if name is None:
+                    missing.append(f"{base} ({tag})")
+                    ok = False
+                m[side][k] = name
+        m["spread"] = bool(spec.get("spread"))
+        out[g] = m if ok else None
+    return out, missing
+
+
+def option_sides(fut, comb, m):
+    """[ol, os, xl, xs] de un grupo en una semana, o Nones si falta algún dato."""
+    if m is None or fut is None or comb is None:
+        return [None] * 4
+    f = {k: num(fut.get(n)) for k, n in m["fut"].items()}
+    c = {k: num(comb.get(n)) for k, n in m["comb"].items()}
+    if any(v is None for v in (*f.values(), *c.values())):
+        return [None] * 4
+    ol, os_ = c["pl"] - f["pl"], c["ps"] - f["ps"]
+    if m["spread"]:
+        moved = c["sp"] - f["sp"]
+        ol, os_ = ol + moved, os_ + moved
+    return [ol, os_, f["pl"] + ol, f["ps"] + os_]
+
+
 def _pct(part, total):
     if part is None or not total:
         return None
     return round(part * 100 / total, 2)
 
 
-def build_asset(rows, codes, fmap, groups, invert, settings, expiry_rule=None):
-    """Construye la tabla, los mín/máx y los eventos de un activo."""
+def _by_date(rows, codes):
     # Si un activo junta varios códigos de contrato, manda el primero de la lista.
-    rows = sorted(rows, key=lambda r: codes.index(r[CODE_FIELD]))
     by_date = {}
-    for r in rows:
+    for r in sorted(rows, key=lambda r: codes.index(r[CODE_FIELD])):
         by_date.setdefault(r[DATE_FIELD][:10], r)
-    dates = sorted(by_date)
+    return by_date
 
-    columns = ["tt"] + [f"{g}.{f}" for g in groups for f in FIELDS]
+
+def build_asset(rows, codes, fmap, groups, invert, settings, expiry_rule=None, options=None):
+    """Construye la tabla, los mín/máx y los eventos de un activo.
+
+    `options`, si se pasa, es {"rows": filas del combined, "fmap": mapa de
+    resolve_option_fields}; añade las columnas de opciones a esos grupos.
+    """
+    by_date = _by_date(rows, codes)
+    dates = sorted(by_date)
+    opt_map = (options or {}).get("fmap") or {}
+    comb_by_date = _by_date((options or {}).get("rows") or [], codes)
+
+    columns = ["tt"] + [f"{g}.{f}" for g in groups for f in FIELDS + (OPT_FIELDS if g in opt_map else [])]
     table = []
     for d in dates:
         r = by_date[d]
@@ -86,6 +154,11 @@ def build_asset(rows, codes, fmap, groups, invert, settings, expiry_rule=None):
                 tl, ts, pl, ps, pol, pos = ts, tl, ps, pl, pos, pol
             pt = pl + ps if pl is not None and ps is not None else None
             line += [tl, ts, _pct(tl, tt), _pct(ts, tt), pl, ps, pt, pol, pos]
+            if g in opt_map:
+                ol, os_, xl, xs = option_sides(r, comb_by_date.get(d), opt_map[g])
+                if invert:
+                    ol, os_, xl, xs = os_, ol, xs, xl
+                line += [ol, os_, xl, xs]
         table.append(line)
 
     # Mínimos y máximos de todo el histórico, columna a columna.

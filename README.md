@@ -66,6 +66,50 @@ el reporte de futuros + opciones: cambia `variant: combined` en
 - Si Gmail falla, los datos se actualizan igualmente y el correo se
   reintenta en la siguiente ejecución.
 
+## Columnas de opciones (Disaggregated)
+
+En Money Managers y PMPU la tabla añade dos bloques que salen de restar el
+reporte de **solo futuros** al de **futuros + opciones** (combined). En el
+combined la CFTC suma a cada trader sus opciones convertidas a futuros con
+la delta: calls compradas y puts vendidas al lado largo, calls vendidas y
+puts compradas al lado corto.
+
+- **Opciones (delta), Long / Short**: lo que cada grupo tiene en opciones en
+  cada lado, en contratos equivalentes.
+- **Futuros + opciones, Long / Short**: la columna de solo futuros más su
+  lado de opciones.
+
+Fórmulas:
+
+    PMPU (no tiene spreading)
+      opciones long  = Long combined  - Long solo futuros
+      opciones short = Short combined - Short solo futuros
+      (futuros + opciones = Long / Short del combined, tal cual)
+
+    Money Managers (hay que corregir el spreading)
+      opciones long  = (Long combined  - Long futuros)  + (Spread combined - Spread futuros)
+      opciones short = (Short combined - Short futuros) + (Spread combined - Spread futuros)
+
+La corrección del spreading hace falta porque, al meter las opciones, la
+CFTC recalcula el spreading de cada trader y mueve contratos entre Long,
+Short y Spread sin que nadie haya operado. Por eso aquí solo se usan
+posiciones: los % de open interest y el número de traders del combined no
+se pueden restar igual.
+
+Las columnas `ol`, `os`, `xl` y `xs` marcan máximos superados como el resto
+(`event_fields` del reporte). Dos cosas a tener en cuenta al leerlas:
+
+- **La delta se mueve con el precio** aunque nadie opere: en un rally las
+  calls ganan delta y crecen solos el lado largo de quien las compró y el
+  corto de quien las vendió. Un máximo nuevo que solo aparece en opciones en
+  una semana de movimiento fuerte puede ser solo efecto del precio.
+- **Semanas de vencimiento**: las opciones que vencen salen del reporte de
+  golpe y los lados de opciones dan saltos sin decisión detrás.
+
+Se activa por reporte con `options_groups` en `config.yaml` (solo con
+`variant: futures_only`). Si la API no devuelve alguna columna necesaria,
+el registro de la ejecución lo avisa y esas columnas quedan vacías.
+
 ## Añadir activos o reportes
 
 Todo está en `config.yaml`:
@@ -78,6 +122,8 @@ Todo está en `config.yaml`:
 - **Reglas propias por reporte**: dentro de un reporte se pueden poner
   `warmup_until`, `warmup_min_weeks` o `event_fields` para que no use los
   valores generales de `settings`.
+- **Columnas de opciones**: `options_groups` con los grupos que las llevan
+  (ver la sección anterior).
 
 Los reportes aparecen en la web como un selector junto al título. Las
 columnas de cada uno están definidas en `cot/schemas.py`. Si la API usa otro
