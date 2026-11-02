@@ -68,7 +68,7 @@ el reporte de futuros + opciones: cambia `variant: combined` en
 
 ## Columnas de opciones (Disaggregated)
 
-En Money Managers y PMPU la tabla añade dos bloques que salen de restar el
+En Money Managers y PMPU la tabla añade un bloque que sale de restar el
 reporte de **solo futuros** al de **futuros + opciones** (combined). En el
 combined la CFTC suma a cada trader sus opciones convertidas a futuros con
 la delta: calls compradas y puts vendidas al lado largo, calls vendidas y
@@ -76,8 +76,9 @@ puts compradas al lado corto.
 
 - **Opciones (delta), Long / Short**: lo que cada grupo tiene en opciones en
   cada lado, en contratos equivalentes.
-- **Futuros + opciones, Long / Short**: la columna de solo futuros más su
-  lado de opciones.
+- **Futuros + opciones, Long / Short** (desactivado): la columna de solo
+  futuros más su lado de opciones. Se vuelve a mostrar añadiendo `xl` y `xs`
+  a `options_fields` en `config.yaml`.
 
 Fórmulas:
 
@@ -96,8 +97,8 @@ Short y Spread sin que nadie haya operado. Por eso aquí solo se usan
 posiciones: los % de open interest y el número de traders del combined no
 se pueden restar igual.
 
-Las columnas `ol`, `os`, `xl` y `xs` marcan máximos superados como el resto
-(`event_fields` del reporte). Dos cosas a tener en cuenta al leerlas:
+Las columnas de opciones marcan máximos superados como el resto si están en
+`event_fields` del reporte. Dos cosas a tener en cuenta al leerlas:
 
 - **La delta se mueve con el precio** aunque nadie opere: en un rally las
   calls ganan delta y crecen solos el lado largo de quien las compró y el
@@ -107,7 +108,8 @@ Las columnas `ol`, `os`, `xl` y `xs` marcan máximos superados como el resto
   golpe y los lados de opciones dan saltos sin decisión detrás.
 
 Se activa por reporte con `options_groups` en `config.yaml` (solo con
-`variant: futures_only`). Si la API no devuelve alguna columna necesaria,
+`variant: futures_only`), y `options_fields` elige qué columnas se muestran
+(por defecto, solo `ol` y `os`). Si la API no devuelve alguna columna necesaria,
 el registro de la ejecución lo avisa y esas columnas quedan vacías.
 
 ## Añadir activos o reportes
